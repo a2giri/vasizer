@@ -1,0 +1,3748 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vasizer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --theme-accent: #06b6d4;
+            --theme-accent-rgb: 6, 182, 212;
+            --theme-accent-soft: rgba(6, 182, 212, 0.14);
+            --theme-accent-mid: rgba(6, 182, 212, 0.35);
+            --theme-on-accent: #ffffff;
+            --bg-base: #f0f7fb;
+            --bg-elevated: rgba(255, 255, 255, 0.78);
+            --bg-panel: rgba(255, 255, 255, 0.88);
+            --bg-muted: rgba(241, 245, 249, 0.9);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border: rgba(148, 163, 184, 0.22);
+            --border-strong: rgba(14, 165, 233, 0.18);
+            --grid-white: #ffffff;
+            --grid-black: #f1f5f9;
+            --grid-line: #e2e8f0;
+            --grid-bar: #cbd5e1;
+            --piano-white: #ffffff;
+            --piano-black: #0f172a;
+            --piano-black-text: #e2e8f0;
+            --piano-white-text: #334155;
+            --shadow-soft: 0 12px 32px -12px rgba(15, 23, 42, 0.1), 0 4px 12px -4px rgba(15, 23, 42, 0.06);
+            --note-fill: var(--theme-accent);
+            --note-selected: color-mix(in srgb, var(--theme-accent) 75%, #38bdf8);
+            --note-multi: #6366f1;
+            --note-move: #f59e0b;
+            --playhead: var(--theme-accent);
+            --scrollbar: #cbd5e1;
+            --range-track: #e2e8f0;
+        }
+        html.dark {
+            --bg-base: #0b1220;
+            --bg-elevated: rgba(15, 23, 42, 0.82);
+            --bg-panel: rgba(15, 23, 42, 0.92);
+            --bg-muted: rgba(30, 41, 59, 0.85);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: rgba(148, 163, 184, 0.12);
+            --border-strong: rgba(var(--theme-accent-rgb), 0.22);
+            --grid-white: #111827;
+            --grid-black: #0c1322;
+            --grid-line: #1e293b;
+            --grid-bar: #334155;
+            --piano-white: #1e293b;
+            --piano-black: #020617;
+            --piano-black-text: #94a3b8;
+            --piano-white-text: #e2e8f0;
+            --shadow-soft: 0 16px 40px -12px rgba(0, 0, 0, 0.45), 0 4px 16px -4px rgba(0, 0, 0, 0.3);
+            --scrollbar: #334155;
+            --range-track: #1e293b;
+            --theme-accent-soft: rgba(var(--theme-accent-rgb), 0.18);
+            --theme-accent-mid: rgba(var(--theme-accent-rgb), 0.4);
+        }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            color: var(--text-primary);
+            background:
+                radial-gradient(ellipse 110% 70% at 0% -10%, var(--theme-accent-soft), transparent 55%),
+                radial-gradient(ellipse 80% 50% at 100% 0%, rgba(var(--theme-accent-rgb), 0.08), transparent 45%),
+                radial-gradient(ellipse 60% 40% at 50% 100%, rgba(var(--theme-accent-rgb), 0.06), transparent 40%),
+                var(--bg-base);
+            transition: background 0.35s ease, color 0.25s ease;
+        }
+        .font-logo { font-family: 'Outfit', sans-serif; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar);
+            border-radius: 9999px;
+        }
+        .glass {
+            background: var(--bg-elevated);
+            backdrop-filter: blur(18px) saturate(1.35);
+            -webkit-backdrop-filter: blur(18px) saturate(1.35);
+            border-color: var(--border);
+        }
+        .btn-tool {
+            transition: background 0.15s, transform 0.1s, box-shadow 0.15s, color 0.15s, border-color 0.15s;
+            color: var(--text-secondary);
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+        }
+        .btn-tool:hover {
+            color: var(--theme-accent);
+            border-color: var(--theme-accent-mid);
+            background: var(--theme-accent-soft);
+        }
+        .btn-tool:active:not(:disabled) { transform: scale(0.96); }
+        .btn-tool:disabled { opacity: 0.4; }
+        .btn-icon {
+            width: 34px; height: 34px;
+            border-radius: 0.7rem;
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 2px;
+            color: var(--text-secondary);
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            transition: background 0.15s, transform 0.1s, color 0.15s, border-color 0.15s;
+            flex-shrink: 0;
+        }
+        .btn-icon:hover {
+            color: var(--theme-accent);
+            border-color: var(--theme-accent-mid);
+            background: var(--theme-accent-soft);
+        }
+        .btn-icon:active:not(:disabled) { transform: scale(0.94); }
+        .btn-icon:disabled { opacity: 0.35; pointer-events: none; }
+        .btn-icon-play {
+            width: 36px; height: 36px;
+            border-radius: 0.75rem;
+            display: inline-flex; align-items: center; justify-content: center;
+            color: var(--theme-on-accent);
+            background: linear-gradient(135deg, var(--theme-accent), color-mix(in srgb, var(--theme-accent) 70%, #0ea5e9));
+            border: none;
+            box-shadow: 0 4px 14px -4px rgba(var(--theme-accent-rgb), 0.45);
+            transition: filter 0.15s, transform 0.1s, box-shadow 0.15s;
+            flex-shrink: 0;
+        }
+        .btn-icon-play:hover { filter: brightness(1.08); }
+        .btn-icon-play:active { transform: scale(0.94); }
+        #btn-theme-toggle { width: 34px; height: 34px; }
+        /* Studio preparing overlay */
+        #studio-loading {
+            position: fixed; inset: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            background:
+                radial-gradient(ellipse at 30% 20%, var(--theme-accent-soft), transparent 55%),
+                radial-gradient(ellipse at 70% 80%, rgba(var(--theme-accent-rgb), 0.1), transparent 50%),
+                color-mix(in srgb, var(--bg-base) 88%, transparent);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            transition: opacity 0.45s ease, visibility 0.45s ease;
+            color: var(--text-primary);
+        }
+        #studio-loading.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .studio-loader-ring {
+            width: 64px; height: 64px; border-radius: 50%;
+            border: 3px solid var(--theme-accent-soft);
+            border-top-color: var(--theme-accent);
+            border-right-color: color-mix(in srgb, var(--theme-accent) 70%, white);
+            animation: studio-spin 0.9s linear infinite;
+        }
+        @keyframes studio-spin { to { transform: rotate(360deg); } }
+        .studio-pulse-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--theme-accent);
+            animation: studio-pulse 1.2s ease-in-out infinite;
+        }
+        .studio-pulse-dot:nth-child(2) { animation-delay: 0.15s; }
+        .studio-pulse-dot:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes studio-pulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.85); }
+            50% { opacity: 1; transform: scale(1.15); }
+        }
+        input[type="range"] {
+            height: 5px; border-radius: 999px;
+            background: var(--range-track);
+            -webkit-appearance: none; appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 15px; height: 15px; border-radius: 50%;
+            background: var(--theme-accent);
+            box-shadow: 0 0 0 3px var(--theme-accent-soft), 0 2px 8px rgba(var(--theme-accent-rgb), 0.4);
+            cursor: pointer;
+        }
+        /* Sidebar polish */
+        #sidebar {
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+        }
+        .sidebar-section-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+        .sidebar-field {
+            margin-bottom: 1.15rem;
+        }
+        .sidebar-field label {
+            color: var(--text-secondary);
+        }
+        .sidebar-select, .sidebar-input {
+            width: 100%;
+            background: var(--bg-muted);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .sidebar-select:focus, .sidebar-input:focus {
+            border-color: var(--theme-accent-mid);
+            box-shadow: 0 0 0 3px var(--theme-accent-soft);
+        }
+        .param-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.35rem;
+        }
+        .param-row label { font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); }
+        .param-val {
+            font-family: ui-monospace, monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--theme-accent);
+        }
+        /* Expression toggles — no box, just elegant rows */
+        .expr-block {
+            padding: 0.85rem 0;
+            border-top: 1px solid var(--border);
+        }
+        .expr-block:last-of-type { border-bottom: 1px solid var(--border); }
+        .expr-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.35rem;
+        }
+        .expr-title {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+        }
+        .expr-title i { color: var(--theme-accent); font-size: 0.75rem; }
+        .expr-desc {
+            font-size: 10px;
+            color: var(--text-muted);
+            line-height: 1.45;
+            margin-bottom: 0.5rem;
+        }
+        /* Theme-aware switch */
+        .theme-switch {
+            position: relative;
+            width: 36px; height: 20px;
+            flex-shrink: 0;
+        }
+        .theme-switch input { opacity: 0; width: 0; height: 0; }
+        .theme-switch .slider {
+            position: absolute; inset: 0;
+            background: var(--range-track);
+            border-radius: 999px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .theme-switch .slider::before {
+            content: '';
+            position: absolute;
+            width: 14px; height: 14px;
+            left: 3px; top: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .theme-switch input:checked + .slider {
+            background: var(--theme-accent);
+        }
+        .theme-switch input:checked + .slider::before {
+            transform: translateX(16px);
+        }
+        /* Header */
+        header.glass {
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow-soft);
+        }
+        #btn-play.btn-icon-play {
+            background: linear-gradient(135deg, var(--theme-accent), color-mix(in srgb, var(--theme-accent) 70%, #0ea5e9)) !important;
+            color: var(--theme-on-accent) !important;
+            border: none !important;
+            box-shadow: 0 4px 14px -4px rgba(var(--theme-accent-rgb), 0.45) !important;
+        }
+        .brand-chip {
+            background: linear-gradient(135deg, var(--theme-accent), color-mix(in srgb, var(--theme-accent) 75%, white)) !important;
+            box-shadow: 0 4px 14px -3px rgba(var(--theme-accent-rgb), 0.4) !important;
+        }
+        .logo-text {
+            background: linear-gradient(90deg, var(--theme-accent), color-mix(in srgb, var(--theme-accent) 60%, #0ea5e9));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        /* Piano / editor */
+        #piano-keys { background: var(--bg-muted); border-color: var(--border) !important; }
+        main { background: color-mix(in srgb, var(--bg-base) 40%, transparent) !important; }
+        #grid-scroll-wrapper { background: var(--grid-white); }
+        .sticky.top-0 { background: var(--bg-panel) !important; border-color: var(--border) !important; }
+        /* Mode toggle button */
+        html.dark #icon-sun { display: none; }
+        html:not(.dark) #icon-moon { display: none; }
+        /* Note modal */
+        #note-modal {
+            background: var(--bg-panel);
+            border-color: var(--border);
+            color: var(--text-primary);
+        }
+        /* Backing track compact */
+        .track-panel {
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 0.85rem;
+            background: var(--bg-muted);
+        }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
+
+    <!-- Studio preparing overlay -->
+    <div id="studio-loading" aria-live="polite" aria-busy="true">
+        <div class="flex flex-col items-center gap-6 px-6 text-center max-w-sm">
+            <div class="relative">
+                <div class="studio-loader-ring"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <i class="fa-solid fa-music text-cyan-500 text-lg"></i>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <h2 class="font-logo font-bold text-xl tracking-wide" style="color: var(--text-primary)">スタジオを準備中</h2>
+                <p id="studio-loading-msg" class="text-sm leading-relaxed" style="color: var(--text-secondary)">ボイスバンクを読み込んでいます…</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="studio-pulse-dot"></span>
+                <span class="studio-pulse-dot"></span>
+                <span class="studio-pulse-dot"></span>
+            </div>
+        </div>
+    </div>
+
+    <header class="glass border-b border-sky-100/80 px-3 md:px-5 py-2.5 flex items-center justify-between shadow-soft z-30 shrink-0">
+        <!-- Brand & Mobile Sidebar Toggle -->
+        <div class="flex items-center gap-3">
+            <button id="btn-toggle-sidebar" class="lg:hidden p-2 text-slate-600 hover:text-cyan-600 hover:bg-cyan-50 rounded-xl btn-tool">
+                <i class="fa-solid fa-bars text-lg"></i>
+            </button>
+            <div class="flex items-center gap-2.5">
+                <div class="brand-chip p-2 rounded-2xl text-white font-bold flex items-center justify-center ring-2 ring-white/30">
+                    <i class="fa-solid fa-music text-base"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-logo font-extrabold tracking-wider logo-text text-base md:text-lg leading-none">Vasizer</span>
+                    <span class="text-[10px] font-medium tracking-widest uppercase" style="color: var(--text-muted)">atsugiri vocabot</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls / Playback (icon-only) -->
+        <div class="flex items-center gap-1 md:gap-1.5 flex-wrap justify-end">
+            <button id="btn-theme-toggle" class="btn-icon" title="ダーク / ライト切替" type="button">
+                <i id="icon-sun" class="fa-solid fa-sun text-sm"></i>
+                <i id="icon-moon" class="fa-solid fa-moon text-sm"></i>
+            </button>
+            <button id="btn-play" class="btn-icon-play" title="再生 / 一時停止" type="button">
+                <i class="fa-solid fa-play"></i>
+            </button>
+            <button id="btn-stop" class="btn-icon" title="停止" type="button">
+                <i class="fa-solid fa-stop text-xs"></i>
+            </button>
+
+            <div class="h-5 w-px mx-0.5 hidden sm:block" style="background: var(--border)"></div>
+
+            <!-- BPM -->
+            <div class="flex items-center gap-1 px-2 py-1 rounded-lg" style="background: var(--bg-muted); border: 1px solid var(--border)" title="テンポ">
+                <i class="fa-solid fa-gauge-high text-xs" style="color: var(--theme-accent)"></i>
+                <input id="header-bpm-input" type="number" min="40" max="240" value="120" class="w-11 rounded-md px-1 py-0.5 text-xs font-mono font-bold text-center focus:outline-none" style="background: var(--bg-panel); border: 1px solid var(--border); color: var(--theme-accent)">
+            </div>
+
+            <div class="h-5 w-px mx-0.5 hidden sm:block" style="background: var(--border)"></div>
+
+            <input type="file" id="input-open-project" accept=".json" class="hidden">
+            <button id="btn-open-project" class="btn-icon" title="プロジェクトを開く" type="button">
+                <i class="fa-solid fa-folder-open" style="color: var(--theme-accent)"></i>
+            </button>
+            <button id="btn-save-project" class="btn-icon" title="プロジェクトを保存" type="button">
+                <i class="fa-solid fa-floppy-disk" style="color: var(--theme-accent)"></i>
+            </button>
+            <button id="btn-add-measures" class="btn-icon" title="+8小節追加" type="button">
+                <i class="fa-solid fa-plus" style="color: var(--theme-accent)"></i>
+                <span id="bar-count-badge" class="text-[9px] font-mono font-bold leading-none" style="color: var(--theme-accent)">16</span>
+            </button>
+
+            <div class="h-5 w-px mx-0.5 hidden md:block" style="background: var(--border)"></div>
+
+            <button id="btn-undo" class="btn-icon" title="元に戻す (Ctrl+Z)" type="button" disabled>
+                <i class="fa-solid fa-rotate-left"></i>
+            </button>
+            <button id="btn-redo" class="btn-icon" title="やり直す (Ctrl+Y)" type="button" disabled>
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+
+            <div class="h-5 w-px mx-0.5 hidden md:block" style="background: var(--border)"></div>
+
+            <button id="btn-copy" class="btn-icon" title="コピー (Ctrl+C)" type="button">
+                <i class="fa-solid fa-copy"></i>
+            </button>
+            <button id="btn-paste" class="btn-icon" title="貼り付け (Ctrl+V)" type="button">
+                <i class="fa-solid fa-paste"></i>
+            </button>
+            <button id="btn-select-all" class="btn-icon" title="全選択 (Ctrl+A)" type="button">
+                <i class="fa-solid fa-object-group"></i>
+            </button>
+            <button id="btn-extract-lyrics" class="btn-icon" title="歌詞を抽出" type="button">
+                <i class="fa-solid fa-file-lines"></i>
+            </button>
+            <button id="btn-export-wav" class="btn-icon" title="WAV保存" type="button">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- Mobile Sidebar Overlay Backdrop -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-xs z-30 hidden lg:hidden"></div>
+
+        <!-- Sidebar / Voice Settings Panel -->
+        <aside id="sidebar" class="fixed lg:relative top-0 left-0 h-full w-[19.5rem] flex flex-col z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out shadow-xl lg:shadow-none shrink-0">
+            <div class="px-4 py-3.5 flex items-center justify-between" style="border-bottom: 1px solid var(--border)">
+                <h2 class="font-bold flex items-center gap-2.5 text-sm" style="color: var(--text-primary)">
+                    <span class="w-8 h-8 rounded-xl flex items-center justify-center" style="background: var(--theme-accent-soft)">
+                        <i class="fa-solid fa-sliders text-sm" style="color: var(--theme-accent)"></i>
+                    </span>
+                    ボイス
+                </h2>
+                <span id="voicebank-status" class="text-[10px] font-medium flex items-center gap-1" style="color: var(--text-muted)">
+                    <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--theme-accent)"></i> ロード中
+                </span>
+            </div>
+
+            <div class="px-4 py-4 overflow-y-auto flex-1 text-xs md:text-sm">
+                <p class="sidebar-section-label">シンガー</p>
+                <div class="sidebar-field">
+                    <select id="singer-mode" class="sidebar-select">
+                        <!-- サンプル音源は VOICEBANKS 配列から自動追加されます -->
+                    </select>
+                </div>
+
+                <div class="sidebar-field">
+                    <label class="block font-medium mb-1.5" style="color: var(--text-secondary)">音程変更方式</label>
+                    <select id="sample-pitch-method" class="sidebar-select">
+                        <option value="rate">pitch（透久音ネコ向け）</option>
+                        <option value="psola">PSOLA（推奨）</option>
+                        <option value="world">WORLD（試験的・不安定）</option>
+                        <option value="formant-pitch">フォルマント（代替）</option>
+                    </select>
+                </div>
+
+                <p class="sidebar-section-label" style="margin-top: 0.5rem">伴奏</p>
+                <div class="track-panel space-y-2.5 mb-4">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold text-xs flex items-center gap-1.5" style="color: var(--text-primary)">
+                            <i class="fa-solid fa-compact-disc" style="color: var(--theme-accent)"></i> 伴奏音源
+                        </span>
+                        <span id="audio-track-status" class="text-[10px] font-medium" style="color: var(--text-muted)">未読み込み</span>
+                    </div>
+                    <input type="file" id="input-audio-track" accept="audio/*" class="hidden">
+                    <button id="btn-load-audio" class="w-full font-semibold py-2 px-3 rounded-xl text-xs btn-tool flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-file-audio" style="color: var(--theme-accent)"></i> 音ファイルを選択
+                    </button>
+                    <div id="audio-track-controls" class="hidden space-y-2 pt-1.5" style="border-top: 1px solid var(--border)">
+                        <div class="text-[11px] font-semibold truncate" id="audio-track-name" style="color: var(--text-primary)">---</div>
+                        <div id="bpm-detect-container" class="flex items-center justify-between p-2 rounded-lg" style="background: var(--bg-panel); border: 1px solid var(--border)">
+                            <span class="text-[11px] font-medium" style="color: var(--text-secondary)">推定BPM: <strong id="detected-bpm-val" class="font-mono" style="color: var(--theme-accent)">解析中...</strong></span>
+                            <button id="btn-apply-bpm" class="hidden text-[10px] font-bold px-2 py-1 rounded-md transition active:scale-95" style="background: var(--theme-accent); color: var(--theme-on-accent)">
+                                適用
+                            </button>
+                        </div>
+                        <div>
+                            <div class="param-row">
+                                <span class="text-[11px] font-medium">伴奏音量</span>
+                                <span id="val-audio-vol" class="param-val">70%</span>
+                            </div>
+                            <input id="param-audio-vol" type="range" min="0" max="1" step="0.05" value="0.7" class="w-full cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <p class="sidebar-section-label">ダイナミクス</p>
+                <div class="sidebar-field">
+                    <div class="param-row">
+                        <label>歌声音量</label>
+                        <span id="val-volume" class="param-val">80%</span>
+                    </div>
+                    <input id="param-volume" type="range" min="0" max="1" step="0.05" value="0.8" class="w-full cursor-pointer">
+                </div>
+                <div class="sidebar-field">
+                    <div class="param-row">
+                        <label>ビブラート</label>
+                        <span id="val-vibrato" class="param-val">15%</span>
+                    </div>
+                    <input id="param-vibrato" type="range" min="0" max="0.5" step="0.05" value="0.15" class="w-full cursor-pointer">
+                </div>
+                <div class="sidebar-field">
+                    <div class="param-row">
+                        <label>リバーブ</label>
+                        <span id="val-reverb" class="param-val">30%</span>
+                    </div>
+                    <input id="param-reverb" type="range" min="0" max="0.8" step="0.05" value="0.3" class="w-full cursor-pointer">
+                </div>
+                <div class="sidebar-field">
+                    <div class="param-row">
+                        <label>テンポ (BPM)</label>
+                        <span id="val-bpm" class="param-val">120</span>
+                    </div>
+                    <input id="param-bpm" type="range" min="60" max="200" step="1" value="120" class="w-full cursor-pointer">
+                </div>
+
+                <p class="sidebar-section-label" style="margin-top: 0.25rem">表現</p>
+                <!-- No card boxes — clean rows -->
+                <div class="expr-block">
+                    <div class="expr-head">
+                        <span class="expr-title"><i class="fa-solid fa-wand-magic-sparkles"></i> 自然さ調整</span>
+                        <label class="theme-switch">
+                            <input id="param-naturalize" type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="expr-desc">フレーズの強弱・立ち上がり・語尾・ビブラートの入り方を調整。声質・音源はそのまま。</p>
+                    <div class="param-row">
+                        <label for="param-naturalize-strength" class="text-[11px]">強さ</label>
+                        <span id="val-naturalize-strength" class="param-val">65%</span>
+                    </div>
+                    <input id="param-naturalize-strength" type="range" min="0" max="1" step="0.05" value="0.65" class="w-full cursor-pointer">
+                </div>
+
+                <div class="expr-block">
+                    <div class="expr-head">
+                        <span class="expr-title"><i class="fa-solid fa-star"></i> アニメ・ボカロ表現</span>
+                        <label class="theme-switch">
+                            <input id="param-anime-style" type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="expr-desc">声の明るさと音符間の短い音程スライドを調整します。</p>
+                    <div class="param-row">
+                        <label for="param-anime-strength" class="text-[11px]">キャラクター感</label>
+                        <span id="val-anime-strength" class="param-val">60%</span>
+                    </div>
+                    <input id="param-anime-strength" type="range" min="0" max="1" step="0.05" value="0.6" class="w-full cursor-pointer">
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col overflow-hidden relative bg-white/70">
+            <div id="editor-container" class="flex-1 flex overflow-hidden">
+                <!-- Piano Keys Column (Fixed Left) -->
+                <div class="w-12 md:w-16 flex flex-col bg-slate-50/90 border-r border-sky-100/80 shrink-0 z-10 pt-8 shadow-sm" id="piano-keys"></div>
+
+                <!-- Scrollable Grid Container -->
+                <div id="grid-scroll-wrapper" class="flex-1 overflow-auto relative">
+                    <!-- Timeline Ruler -->
+                    <div class="sticky top-0 z-20 bg-white border-b border-sky-200">
+                        <canvas id="ruler-canvas" class="block cursor-pointer"></canvas>
+                    </div>
+                    <!-- Note Grid Canvas -->
+                    <canvas id="grid-canvas" class="block cursor-crosshair"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="note-modal" class="fixed bottom-0 left-0 right-0 z-40 transform translate-y-full transition-transform duration-250 ease-out hidden" style="background: var(--bg-panel); border-top: 1px solid var(--border); box-shadow: var(--shadow-soft); backdrop-filter: blur(16px)">
+        <div class="max-w-6xl mx-auto px-3 py-2.5">
+            <!-- Single compact row: label · lyric · params · actions -->
+            <div class="flex items-center gap-2 md:gap-3 flex-wrap md:flex-nowrap">
+                <span id="note-info-label" class="text-[11px] font-bold px-2 py-1 rounded-lg shrink-0" style="background: var(--theme-accent-soft); color: var(--theme-accent)">ノート</span>
+
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <span class="text-[10px] font-semibold" style="color: var(--text-muted)">歌詞</span>
+                    <input id="modal-lyric-input" type="text" maxlength="4" class="w-14 rounded-lg px-2 py-1 text-sm font-bold text-center focus:outline-none" style="background: var(--bg-muted); border: 1px solid var(--border); color: var(--theme-accent)">
+                </div>
+
+                <div class="hidden sm:block h-5 w-px shrink-0" style="background: var(--border)"></div>
+
+                <!-- Params in one horizontal strip -->
+                <div class="flex-1 min-w-0 flex items-end gap-2 md:gap-3 overflow-x-auto pb-0.5">
+                    <div class="note-param shrink-0" style="min-width: 72px">
+                        <div class="flex justify-between items-center mb-0.5 gap-1">
+                            <label class="text-[10px] font-medium" style="color: var(--text-muted)">音量</label>
+                            <span id="modal-val-volume" class="font-mono text-[10px] font-semibold" style="color: var(--theme-accent)">100%</span>
+                        </div>
+                        <input id="modal-param-volume" type="range" min="0" max="1.5" step="0.05" value="1" class="w-full cursor-pointer">
+                    </div>
+                    <div class="note-param shrink-0" style="min-width: 72px">
+                        <div class="flex justify-between items-center mb-0.5 gap-1">
+                            <label class="text-[10px] font-medium" style="color: var(--text-muted)">ビブ</label>
+                            <span id="modal-val-vibrato" class="font-mono text-[10px] font-semibold" style="color: var(--theme-accent)">—</span>
+                        </div>
+                        <input id="modal-param-vibrato" type="range" min="-1" max="0.5" step="0.05" value="-1" class="w-full cursor-pointer" title="-1=グローバル">
+                    </div>
+                    <div class="note-param shrink-0" style="min-width: 72px">
+                        <div class="flex justify-between items-center mb-0.5 gap-1">
+                            <label class="text-[10px] font-medium" style="color: var(--text-muted)">リバーブ</label>
+                            <span id="modal-val-reverb" class="font-mono text-[10px] font-semibold" style="color: var(--theme-accent)">—</span>
+                        </div>
+                        <input id="modal-param-reverb" type="range" min="-1" max="0.8" step="0.05" value="-1" class="w-full cursor-pointer" title="-1=グローバル">
+                    </div>
+                    <div class="note-param shrink-0" style="min-width: 80px">
+                        <div class="flex justify-between items-center mb-0.5 gap-1">
+                            <label class="text-[10px] font-medium" style="color: var(--text-muted)">半音</label>
+                            <span id="modal-val-pitch" class="font-mono text-[10px] font-semibold" style="color: var(--theme-accent)">0</span>
+                        </div>
+                        <input id="modal-param-pitch" type="range" min="-12" max="12" step="0.01" value="0" class="w-full cursor-pointer" title="半音補正">
+                    </div>
+                    <div class="note-param shrink-0" style="min-width: 72px">
+                        <div class="flex justify-between items-center mb-0.5 gap-1">
+                            <label class="text-[10px] font-medium" style="color: var(--text-muted)">¢</label>
+                            <span id="modal-val-cents" class="font-mono text-[10px] font-semibold" style="color: var(--theme-accent)">0¢</span>
+                        </div>
+                        <input id="modal-param-cents" type="range" min="-100" max="100" step="1" value="0" class="w-full cursor-pointer" title="セント">
+                    </div>
+                    <div class="note-param shrink-0" style="min-width: 100px">
+                        <div class="flex justify-between items-center mb-0.5 gap-1">
+                            <label class="text-[10px] font-medium" style="color: var(--text-muted)">方式</label>
+                            <span id="modal-val-pitch-method" class="font-mono text-[9px] font-semibold" style="color: var(--theme-accent)">グローバル</span>
+                        </div>
+                        <select id="modal-param-pitch-method" class="w-full rounded-md px-1.5 py-0.5 text-[10px] font-medium focus:outline-none" style="background: var(--bg-muted); border: 1px solid var(--border); color: var(--text-primary)">
+                            <option value="">グローバル</option>
+                            <option value="psola">PSOLA</option>
+                            <option value="world">WORLD</option>
+                            <option value="rate">pitch</option>
+                            <option value="formant-pitch">フォルマント</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-1 shrink-0 ml-auto">
+                    <button id="modal-move-btn" class="btn-icon" title="移動" type="button">
+                        <i class="fa-solid fa-arrows-up-down-left-right text-xs"></i>
+                    </button>
+                    <button id="modal-delete-btn" class="btn-icon" title="削除" type="button" style="color: #ef4444">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                    <button id="modal-close" class="btn-icon" title="閉じる" type="button">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Keep for JS that may set modal-move-text -->
+            <span id="modal-move-text" class="hidden">移動</span>
+        </div>
+    </div>
+
+    <!-- Lyric Extract Modal -->
+    <div id="lyric-modal" class="fixed inset-0 bg-slate-900/35 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white/95 rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col overflow-hidden border border-sky-100/80">
+            <div class="p-4 border-b border-sky-100/80 flex items-center justify-between">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-file-lines text-violet-500"></i> 歌詞抽出
+                </h3>
+                <button id="lyric-modal-close" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-sky-50 btn-tool">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1 space-y-3">
+                <div>
+                    <label class="text-xs font-semibold text-slate-600 block mb-1">連続歌詞（スペース区切り）</label>
+                    <textarea id="lyric-text-continuous" readonly class="w-full h-20 bg-slate-50 border border-sky-200 rounded-xl p-3 text-sm font-mono text-slate-800 resize-none focus:outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-600 block mb-1">1行1音（ノート順）</label>
+                    <textarea id="lyric-text-lines" readonly class="w-full h-40 bg-slate-50 border border-sky-200 rounded-xl p-3 text-sm font-mono text-slate-800 resize-none focus:outline-none"></textarea>
+                </div>
+            </div>
+            <div class="p-4 border-t border-sky-100 flex gap-2 justify-end">
+                <button id="btn-copy-lyrics" class="bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 font-semibold px-4 py-2 rounded-xl text-sm transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-copy"></i> コピー
+                </button>
+                <button id="btn-download-lyrics" class="bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-semibold px-4 py-2 rounded-xl text-sm transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-download"></i> TXT保存
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Kana to Phoneme map
+        const KANA_MAP = {
+            'あ': { c: '', v: 'あ' }, 'い': { c: '', v: 'い' }, 'う': { c: '', v: 'う' }, 'え': { c: '', v: 'え' }, 'お': { c: '', v: 'お' },
+            'か': { c: 'k', v: 'あ' }, 'き': { c: 'k', v: 'い' }, 'く': { c: 'k', v: 'う' }, 'け': { c: 'k', v: 'え' }, 'こ': { c: 'k', v: 'お' },
+            'さ': { c: 's', v: 'あ' }, 'し': { c: 's', v: 'い' }, 'す': { c: 's', v: 'う' }, 'せ': { c: 's', v: 'え' }, 'そ': { c: 's', v: 'お' },
+            'た': { c: 't', v: 'あ' }, 'ち': { c: 't', v: 'い' }, 'つ': { c: 't', v: 'う' }, 'て': { c: 't', v: 'え' }, 'と': { c: 't', v: 'お' },
+            'な': { c: 'n', v: 'あ' }, 'に': { c: 'n', v: 'い' }, 'ぬ': { c: 'n', v: 'う' }, 'ね': { c: 'n', v: 'え' }, 'の': { c: 'n', v: 'お' },
+            'は': { c: 'h', v: 'あ' }, 'ひ': { c: 'h', v: 'い' }, 'ふ': { c: 'h', v: 'う' }, 'へ': { c: 'h', v: 'え' }, 'ほ': { c: 'h', v: 'お' },
+            'ま': { c: 'm', v: 'あ' }, 'み': { c: 'm', v: 'い' }, 'む': { c: 'm', v: 'う' }, 'め': { c: 'm', v: 'え' }, 'も': { c: 'm', v: 'お' },
+            'や': { c: 'y', v: 'あ' }, 'ゆ': { c: 'y', v: 'う' }, 'よ': { c: 'y', v: 'お' },
+            'ら': { c: 'r', v: 'あ' }, 'り': { c: 'r', v: 'い' }, 'る': { c: 'r', v: 'う' }, 'れ': { c: 'r', v: 'え' }, 'ろ': { c: 'r', v: 'お' },
+            'わ': { c: 'w', v: 'あ' }, 'を': { c: 'w', v: 'お' }, 'ん': { c: 'n', v: 'ん' },
+            'が': { c: 'g', v: 'あ' }, 'ぎ': { c: 'g', v: 'い' }, 'ぐ': { c: 'g', v: 'う' }, 'げ': { c: 'g', v: 'え' }, 'ご': { c: 'g', v: 'お' },
+            'ざ': { c: 'z', v: 'あ' }, 'じ': { c: 'z', v: 'い' }, 'ず': { c: 'z', v: 'う' }, 'ぜ': { c: 'z', v: 'え' }, 'ぞ': { c: 'z', v: 'お' },
+            'だ': { c: 'd', v: 'あ' }, 'ぢ': { c: 'd', v: 'い' }, 'づ': { c: 'd', v: 'う' }, 'で': { c: 'd', v: 'え' }, 'ど': { c: 'd', v: 'お' },
+            'ば': { c: 'b', v: 'あ' }, 'び': { c: 'b', v: 'い' }, 'ぶ': { c: 'b', v: 'う' }, 'べ': { c: 'b', v: 'え' }, 'ぼ': { c: 'b', v: 'お' },
+            'ぱ': { c: 'p', v: 'あ' }, 'ぴ': { c: 'p', v: 'い' }, 'ぷ': { c: 'p', v: 'う' }, 'ぺ': { c: 'p', v: 'え' }, 'ぽ': { c: 'p', v: 'お' },
+            'きゃ': { c: 'k', v: 'あ' }, 'きゅ': { c: 'k', v: 'う' }, 'きょ': { c: 'k', v: 'お' },
+            'しゃ': { c: 's', v: 'あ' }, 'しゅ': { c: 's', v: 'う' }, 'しょ': { c: 's', v: 'お' },
+            'ちゃ': { c: 't', v: 'あ' }, 'ちゅ': { c: 't', v: 'う' }, 'ちょ': { c: 't', v: 'お' },
+            'にゃ': { c: 'n', v: 'あ' }, 'にゅ': { c: 'n', v: 'う' }, 'にょ': { c: 'n', v: 'お' },
+            'ひゃ': { c: 'h', v: 'あ' }, 'ひゅ': { c: 'h', v: 'う' }, 'ひょ': { c: 'h', v: 'お' },
+            'みゃ': { c: 'm', v: 'あ' }, 'みゅ': { c: 'm', v: 'う' }, 'みょ': { c: 'm', v: 'お' },
+            'りゃ': { c: 'r', v: 'あ' }, 'りゅ': { c: 'r', v: 'う' }, 'りょ': { c: 'r', v: 'お' },
+            'ぎゃ': { c: 'g', v: 'あ' }, 'ぎゅ': { c: 'g', v: 'う' }, 'ぎょ': { c: 'g', v: 'お' },
+            'じゃ': { c: 'z', v: 'あ' }, 'じゅ': { c: 'z', v: 'う' }, 'じょ': { c: 'z', v: 'お' },
+            'びゃ': { c: 'b', v: 'あ' }, 'びゅ': { c: 'b', v: 'う' }, 'びょ': { c: 'b', v: 'お' },
+            'ぴゃ': { c: 'p', v: 'あ' }, 'ぴゅ': { c: 'p', v: 'う' }, 'ぴょ': { c: 'p', v: 'お' },
+            'ゃ': { c: '', v: 'あ' }, 'ゅ': { c: '', v: 'う' }, 'ょ': { c: '', v: 'お' }, 'っ': { c: '', v: '' }
+        };
+
+        const FORMANT_MAP = {
+            'あ': [800, 1200, 2600],
+            'い': [300, 2300, 3000],
+            'う': [300, 1200, 2500],
+            'え': [500, 1900, 2600],
+            'お': [500, 800, 2500],
+            'ん': [250, 600, 2200]
+        };
+
+        // ============================================================
+        //  ★ ボイスバンク一覧（ここを編集するだけ・複数追加OK）
+        //  Neko も含め、すべて同じ形式です。
+        // ------------------------------------------------------------
+        //  {
+        //    name: "シンガー名",
+        //    themeColor: "#fcb600",
+        //    pitchMethod: "pitch",   // "pitch" または "psola"
+        //    otoUrl: "https://.../oto.ini",  // 1行1音素
+        //    uUrl:   "https://.../u.txt"     // 1行1Base64・otoと同じ順
+        //  }
+        // ============================================================
+        const VOICEBANKS = [
+            {
+                id: "neko",
+                name: "Neko",
+                themeColor: "#fcb600",
+                pitchMethod: "pitch",
+                otoUrl: "https://neko.puter.site/oto.ini",
+                uUrl: "https://neko.puter.site/u.txt"
+            }
+            // 追加例（カンマを忘れずに）:
+            // ,{
+            //     name: "MySinger",
+            //     themeColor: "#a78bfa",
+            //     pitchMethod: "psola",
+            //     otoUrl: "https://example.com/oto.ini",
+            //     uUrl: "https://example.com/u.txt"
+            // }
+        ];
+
+
+        function base64ToArrayBuffer(base64) {
+            const clean = base64.replace(/^data:audio\/\w+;base64,/, '').trim();
+            const binaryString = window.atob(clean);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        /**
+         * GitHub blob URL → raw.githubusercontent.com
+         */
+        function convertToRawGithubUrl(url) {
+            try {
+                let u = String(url || '').trim();
+                if (u.includes('github.com') && u.includes('/blob/')) {
+                    u = u.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+                }
+                return u;
+            } catch (e) {
+                return url;
+            }
+        }
+
+        /**
+         * Normalize pitchMethod from voicebank JSON.
+         * "pitch" is an alias of "rate" (playbackRate).
+         */
+        function normalizeBankPitchMethod(m) {
+            if (!m) return 'rate';
+            const s = String(m).toLowerCase().trim();
+            if (s === 'pitch' || s === 'rate' || s === 'playbackrate') return 'rate';
+            if (s === 'psola') return 'psola';
+            if (s === 'world') return 'world';
+            if (s === 'formant-pitch' || s === 'formant') return 'formant-pitch';
+            return 'rate';
+        }
+
+        // Binary search helper: find rightmost note with startTick < targetTick
+        function findPrevNoteIndex(notes, targetTick) {
+            let lo = 0, hi = notes.length - 1, ans = -1;
+            while (lo <= hi) {
+                const mid = (lo + hi) >> 1;
+                if (notes[mid].startTick < targetTick) {
+                    ans = mid;
+                    lo = mid + 1;
+                } else {
+                    hi = mid - 1;
+                }
+            }
+            return ans;
+        }
+
+        function getEffectiveLyric(note, notes) {
+            if (!note) return 'あ';
+            const lyric = note.lyric;
+            if (lyric === 'っ') return 'っ';
+
+            // Ensure notes are sorted by startTick for O(log n) previous lookup
+            // (caller should call ensureNotesSorted when mutating)
+
+            if (lyric === 'ー') {
+                let idx = findPrevNoteIndex(notes, note.startTick);
+                while (idx >= 0) {
+                    const prev = notes[idx];
+                    if (prev.lyric !== 'ー' && prev.lyric !== 'っ') {
+                        const prevLyric = getEffectiveLyric(prev, notes);
+                        const kana = KANA_MAP[prevLyric];
+                        return (kana && kana.v) ? kana.v : 'あ';
+                    }
+                    idx--;
+                }
+                return 'あ';
+            }
+
+            if (['ゃ', 'ゅ', 'ょ'].includes(lyric)) {
+                let idx = findPrevNoteIndex(notes, note.startTick);
+                while (idx >= 0) {
+                    const prev = notes[idx];
+                    if (prev.lyric !== 'ー' && prev.lyric !== 'っ') {
+                        return prev.lyric + lyric;
+                    }
+                    idx--;
+                }
+                return lyric === 'ゃ' ? 'あ' : lyric === 'ゅ' ? 'う' : 'お';
+            }
+
+            return lyric;
+        }
+
+        // ========== Sample Pitch Algorithms: PSOLA / WORLD-like / rate ==========
+        // Full WORLD needs WASM (World.JS). Here we use pure-JS approximations
+        // suitable for short phoneme samples.
+
+        const hannWindowCache = new Map();
+        function hannWindow(N) {
+            // PSOLA/WORLD repeatedly use the same grain lengths; reuse the window.
+            if (hannWindowCache.has(N)) return hannWindowCache.get(N);
+            const w = new Float32Array(N);
+            for (let i = 0; i < N; i++) {
+                w[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / Math.max(1, N - 1)));
+            }
+            if (hannWindowCache.size >= 32) hannWindowCache.delete(hannWindowCache.keys().next().value);
+            hannWindowCache.set(N, w);
+            return w;
+        }
+
+        function bufferToMono(audioBuffer) {
+            const nCh = audioBuffer.numberOfChannels;
+            const len = audioBuffer.length;
+            const mono = new Float32Array(len);
+            for (let c = 0; c < nCh; c++) {
+                const ch = audioBuffer.getChannelData(c);
+                for (let i = 0; i < len; i++) mono[i] += ch[i] / nCh;
+            }
+            return mono;
+        }
+
+        /** Fast autocorrelation F0 estimate. Bounds work to a short, downsampled segment. */
+        function estimateF0(mono, sampleRate) {
+            if (!mono || mono.length < 256) return 0;
+
+            // Use at most ~4,000 samples at an effective rate near 8 kHz.
+            const stride = Math.max(1, Math.floor(sampleRate / 8000));
+            const effectiveRate = sampleRate / stride;
+            const minLag = Math.max(2, Math.floor(effectiveRate / 500));
+            const maxLag = Math.min(Math.floor(effectiveRate / 70), 180);
+            const rawStart = Math.floor(mono.length * 0.2);
+            const rawEnd = Math.floor(mono.length * 0.8);
+            const start = Math.ceil(rawStart / stride) * stride;
+            const count = Math.min(4000, Math.floor((rawEnd - start) / stride));
+            if (count < maxLag * 2) return 0;
+
+            // Compact the selected audio section once; avoid repeatedly indexing full-rate audio.
+            const x = new Float32Array(count);
+            let energy = 0;
+            for (let i = 0, p = start; i < count; i++, p += stride) {
+                x[i] = mono[p];
+                energy += x[i] * x[i];
+            }
+            if (energy < 1e-10) return 0;
+
+            let bestLag = 0, bestCorr = -1;
+            const usable = count - maxLag;
+            for (let lag = minLag; lag <= maxLag; lag++) {
+                let corr = 0, e0 = 0, e1 = 0;
+                const n = count - lag;
+                for (let i = 0; i < n; i++) {
+                    const a = x[i], b = x[i + lag];
+                    corr += a * b;
+                    e0 += a * a;
+                    e1 += b * b;
+                }
+                const denom = Math.sqrt(e0 * e1);
+                const c = denom > 1e-12 ? corr / denom : 0;
+                if (c > bestCorr) {
+                    bestCorr = c;
+                    bestLag = lag;
+                }
+            }
+            if (bestCorr < 0.35 || bestLag <= 0) return 0;
+            return effectiveRate / bestLag;
+        }
+
+        /**
+         * PSOLA pitch shift (length-preserving). Classic for speech/singing samples.
+         * ratio > 1 = higher pitch.
+         */
+        /**
+         * PSOLA pitch shift — duration preserved.
+         * Synthesis hop denser/sparser for pitch; analysis position follows same relative time.
+         * No wrap-around (that caused rhythmic chopping).
+         */
+        function pitchShiftPSOLA(mono, ratio, sampleRate) {
+            if (Math.abs(ratio - 1) < 0.002) return mono.slice(0);
+            ratio = Math.max(0.4, Math.min(2.5, ratio));
+
+            const f0 = estimateF0(mono, sampleRate);
+            const period = Math.max(20, f0 > 0 ? Math.round(sampleRate / f0) : Math.round(sampleRate / 140));
+            const grainSize = Math.min(mono.length, Math.max(period * 2, 48));
+            const half = grainSize >> 1;
+            const win = hannWindow(grainSize);
+
+            const outLen = mono.length;
+            const output = new Float32Array(outLen);
+            const norm = new Float32Array(outLen);
+
+            // Duration-preserving: synthesis steps by period/ratio,
+            // analysis center tracks the same relative timeline (s * ratio).
+            const synthHop = Math.max(2, Math.round(period / ratio));
+
+            for (let s = half; s < outLen - half; s += synthHop) {
+                let a = Math.round(s * ratio);
+                // Clamp analysis grain fully inside input
+                a = Math.max(half, Math.min(mono.length - half - 1, a));
+                const grainStart = a - half;
+
+                for (let i = 0; i < grainSize; i++) {
+                    const oi = s - half + i;
+                    if (oi < 0 || oi >= outLen) continue;
+                    output[oi] += mono[grainStart + i] * win[i];
+                    norm[oi] += win[i];
+                }
+            }
+
+            // Fill any edge gaps with original (avoids silence/clicks)
+            for (let i = 0; i < outLen; i++) {
+                if (norm[i] > 1e-5) {
+                    output[i] /= norm[i];
+                } else {
+                    output[i] = mono[i];
+                }
+            }
+            return output;
+        }
+
+        /**
+         * WORLD-like: F0 estimate → pitch marks → resynthesize at new period.
+         * Duration-preserving, continuous OLA, no mark recycling (that caused crackle).
+         */
+        function pitchShiftWORLDLike(mono, ratio, sampleRate) {
+            if (Math.abs(ratio - 1) < 0.002) return mono.slice(0);
+            ratio = Math.max(0.4, Math.min(2.5, ratio));
+
+            const f0 = estimateF0(mono, sampleRate);
+            const srcF0 = f0 > 0 ? f0 : 140;
+            const srcPeriod = Math.max(20, Math.round(sampleRate / srcF0));
+            const tgtPeriod = Math.max(8, Math.round(srcPeriod / ratio));
+
+            const grainSize = Math.min(mono.length, Math.max(srcPeriod * 2, 48));
+            const half = grainSize >> 1;
+            if (mono.length < grainSize + 4) {
+                return pitchShiftPSOLA(mono, ratio, sampleRate);
+            }
+            const win = hannWindow(grainSize);
+
+            // Pitch marks along the original signal (no recycling)
+            const marks = [];
+            for (let p = half; p <= mono.length - half; p += srcPeriod) {
+                let best = p, bestAbs = Math.abs(mono[p]);
+                const lo = Math.max(half, p - (srcPeriod >> 2));
+                const hi = Math.min(mono.length - half - 1, p + (srcPeriod >> 2));
+                for (let i = lo; i <= hi; i++) {
+                    const a = Math.abs(mono[i]);
+                    if (a > bestAbs) { bestAbs = a; best = i; }
+                }
+                marks.push(best);
+            }
+            if (marks.length < 2) {
+                return pitchShiftPSOLA(mono, ratio, sampleRate);
+            }
+
+            const outLen = mono.length;
+            const output = new Float32Array(outLen);
+            const norm = new Float32Array(outLen);
+
+            // Map each synthesis position to nearest source mark by relative time
+            for (let s = half; s < outLen - half; s += tgtPeriod) {
+                const rel = s / outLen;
+                const markIdx = Math.min(marks.length - 1, Math.max(0, Math.round(rel * (marks.length - 1))));
+                const a = marks[markIdx];
+                const grainStart = a - half;
+
+                for (let i = 0; i < grainSize; i++) {
+                    const oi = s - half + i;
+                    if (oi < 0 || oi >= outLen) continue;
+                    const si = grainStart + i;
+                    if (si < 0 || si >= mono.length) continue;
+                    output[oi] += mono[si] * win[i];
+                    norm[oi] += win[i];
+                }
+            }
+
+            for (let i = 0; i < outLen; i++) {
+                if (norm[i] > 1e-5) {
+                    output[i] /= norm[i];
+                } else {
+                    output[i] = mono[i];
+                }
+            }
+            return output;
+        }
+
+        function monoToBuffer(mono, sampleRate, audioCtx) {
+            const out = audioCtx.createBuffer(1, mono.length, sampleRate);
+            out.copyToChannel(mono, 0);
+            return out;
+        }
+
+        let samplePitchMethod = 'rate'; // rate(pitch) | psola | world | formant-pitch
+
+        const samplePitchCache = new Map();
+        // Keep enough pitch variants for longer songs without unbounded memory growth.
+        // Playback pre-processes notes first; too-small caches evict early notes and
+        // force expensive PSOLA work again while the whole sequence is being scheduled.
+        const SAMPLE_CACHE_MAX = 512;
+
+        function getPitchedSampleBuffer(synth, vbId, lyric, effectiveMidi, sampleBuf, method) {
+            const algo = method || samplePitchMethod || 'rate';
+            if (algo === 'rate' || algo === 'formant-pitch') return sampleBuf; // caller uses playbackRate; vowel formant filters remain active
+
+            // Quantize midi for cache key (~1 cent)
+            const midiKey = Math.round(effectiveMidi * 100) / 100;
+            const key = vbId + '|' + lyric + '|' + midiKey + '|' + algo;
+            if (samplePitchCache.has(key)) return samplePitchCache.get(key);
+
+            const ratio = Math.pow(2, (effectiveMidi - 60) / 12);
+            if (Math.abs(ratio - 1) < 0.002) return sampleBuf;
+
+            // Very short samples: PSOLA/WORLD degrade → fall back to rate
+            if (sampleBuf.duration < 0.04) return sampleBuf;
+
+            const mono = bufferToMono(sampleBuf);
+            const sr = sampleBuf.sampleRate;
+            let pitchedMono;
+            try {
+                if (algo === 'world') {
+                    pitchedMono = pitchShiftWORLDLike(mono, ratio, sr);
+                } else {
+                    pitchedMono = pitchShiftPSOLA(mono, ratio, sr);
+                }
+            } catch (e) {
+                return sampleBuf;
+            }
+
+            const pitched = monoToBuffer(pitchedMono, sr, synth.ctx);
+
+            if (samplePitchCache.size >= SAMPLE_CACHE_MAX) {
+                const first = samplePitchCache.keys().next().value;
+                samplePitchCache.delete(first);
+            }
+            samplePitchCache.set(key, pitched);
+            return pitched;
+        }
+
+        // Theme accent — drives notes, playhead, buttons, sidebar accents
+        function hexToRgb(hex) {
+            let h = hex.replace('#', '');
+            if (h.length === 3) h = h.split('').map(c => c + c).join('');
+            const n = parseInt(h, 16);
+            return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+        }
+        function applyThemeColor(hex) {
+            if (!hex || typeof hex !== 'string') return;
+            let c = hex.trim();
+            if (!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c)) return;
+            if (c.length === 4) {
+                c = '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+            }
+            try {
+                const [r, g, b] = hexToRgb(c);
+                const root = document.documentElement;
+                root.style.setProperty('--theme-accent', c);
+                root.style.setProperty('--theme-accent-rgb', `${r}, ${g}, ${b}`);
+                root.style.setProperty('--theme-accent-soft', `rgba(${r}, ${g}, ${b}, 0.14)`);
+                root.style.setProperty('--theme-accent-mid', `rgba(${r}, ${g}, ${b}, 0.35)`);
+                // Luminance for on-accent text
+                const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                root.style.setProperty('--theme-on-accent', lum > 0.62 ? '#0f172a' : '#ffffff');
+                requestDraw();
+            } catch (e) {}
+        }
+
+        function getCssVar(name, fallback) {
+            const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+            return v || fallback;
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            try { localStorage.setItem('vasizer-theme', isDark ? 'dark' : 'light'); } catch (e) {}
+            initPianoKeys();
+            requestDraw();
+        }
+        function initColorMode() {
+            let preferDark = false;
+            try {
+                const saved = localStorage.getItem('vasizer-theme');
+                if (saved === 'dark') preferDark = true;
+                else if (saved === 'light') preferDark = false;
+                else preferDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            } catch (e) {}
+            document.documentElement.classList.toggle('dark', preferDark);
+        }
+        initColorMode();
+
+        class VocaloidSynthEngine {
+            constructor() {
+                this.ctx = null;
+                this.isInit = false;
+                this.mode = ''; // set to first loaded voicebank id
+                this.sampleBuffers = {}; // default / neko sample buffers
+                this.voicebanks = {};    // custom voicebanks store
+                this.activeNodes = [];
+                this.params = {
+                    volume: 0.8,
+                    gender: 12,
+                    vibrato: 0.15,
+                    reverb: 0.3,
+                    naturalize: true,
+                    naturalizeStrength: 0.65,
+                    animeStyle: true,
+                    animeStyleStrength: 0.6,
+                    bpm: 120
+                };
+            }
+
+            stopAll() {
+                this.activeNodes.forEach(node => {
+                    try {
+                        if (node.stop) node.stop();
+                    } catch (e) {}
+                    try {
+                        if (node.disconnect) node.disconnect();
+                    } catch (e) {}
+                });
+                this.activeNodes = [];
+            }
+
+            init() {
+                if (this.isInit) return;
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioCtx();
+
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = this.params.volume;
+
+                this.reverbNode = this.ctx.createConvolver();
+                this.reverbNode.buffer = this.createImpulseResponse(1.8, 2.0);
+
+                this.dryGain = this.ctx.createGain();
+                this.reverbGain = this.ctx.createGain();
+
+                this.dryGain.gain.value = 1.0 - this.params.reverb * 0.5;
+                this.reverbGain.gain.value = this.params.reverb;
+
+                this.masterGain.connect(this.dryGain);
+                this.dryGain.connect(this.ctx.destination);
+
+                this.masterGain.connect(this.reverbNode);
+                this.reverbNode.connect(this.reverbGain);
+                this.reverbGain.connect(this.ctx.destination);
+
+                this.isInit = true;
+                // Sample banks load from VOICEBANKS via loadVoicebanksFromConfig()
+            }
+
+            createImpulseResponse(duration, decay) {
+                const sampleRate = this.ctx.sampleRate;
+                const length = sampleRate * duration;
+                const impulse = this.ctx.createBuffer(2, length, sampleRate);
+                for (let c = 0; c < 2; c++) {
+                    const channel = impulse.getChannelData(c);
+                    for (let i = 0; i < length; i++) {
+                        channel[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+                    }
+                }
+                return impulse;
+            }
+
+            async loadNekoVoicebank() {
+                const statusEl = document.getElementById('voicebank-status');
+                try {
+                    const [txtRes, iniRes] = await Promise.all([
+                        fetch('https://neko.puter.site/u.txt'),
+                        fetch('https://neko.puter.site/oto.ini')
+                    ]);
+
+                    if (!txtRes.ok || !iniRes.ok) throw new Error('音源失敗');
+
+                    const b64Text = await txtRes.text();
+                    const iniText = await iniRes.text();
+
+                    const b64Lines = b64Text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                    const iniLines = iniText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+                    let loadedCount = 0;
+                    for (let i = 0; i < Math.min(b64Lines.length, iniLines.length); i++) {
+                        const lyric = iniLines[i];
+                        const b64 = b64Lines[i];
+                        try {
+                            const arrayBuffer = base64ToArrayBuffer(b64);
+                            const audioBuf = await this.ctx.decodeAudioData(arrayBuffer);
+                            this.sampleBuffers[lyric] = audioBuf;
+                            loadedCount++;
+                        } catch (e) {}
+                    }
+
+                    // Neko built-in metadata
+                    this.nekoMeta = {
+                        name: 'Neko',
+                        themeColor: '#fcb600',
+                        defaultPitchMethod: 'rate'
+                    };
+                    applyThemeColor('#fcb600');
+                    if (statusEl) {
+                        statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500"></i> Neko音源: ロード完了 (${loadedCount}音素)`;
+                    }
+                } catch (e) {
+                    if (statusEl) {
+                        statusEl.innerHTML = `<i class="fa-solid fa-circle-info text-cyan-600"></i> フォルマント音源を使用中`;
+                    }
+                }
+            }
+
+            /**
+             * Register a custom sample voicebank (Neko-compatible pairing).
+             * lyrics[i] ↔ base64[i]  same as Neko oto.ini line i ↔ u.txt line i.
+             *
+             * Arrays:
+             *   { "name", "themeColor", "pitchMethod", "lyrics": [...], "base64": [...] }
+             * Or multiline strings (Neko file contents):
+             *   { "name", "themeColor", "pitchMethod", "oto": "あ\nい", "u": "b64\nb64" }
+             */
+            async registerCustomVoicebank(jsonData, options = {}) {
+                if (!this.isInit) this.init();
+
+                const data = (typeof jsonData === 'string') ? JSON.parse(jsonData) : jsonData;
+                const vbName = (data.name || data.singer || data.title || '').toString().trim();
+                if (!vbName) throw new Error('name（シンガー名）がありません。');
+
+                const themeColor = (data.themeColor || data.color || data.theme || '#06b6d4').toString().trim();
+                const defaultPitchMethod = normalizeBankPitchMethod(data.pitchMethod || data.pitch || data.method || 'pitch');
+
+                // Neko-style: fetch oto.ini + u.txt from URLs (1 line = 1 phoneme, same order)
+                const otoUrlRaw = data.otoUrl || data.lyricsUrl || data.oto || data.lyrics || null;
+                const uUrlRaw = data.uUrl || data.base64Url || data.u || data.base64 || null;
+
+                // If values look like URLs, fetch; if arrays/multiline embedded, still accept as fallback
+                const isUrl = (v) => typeof v === 'string' && /^https?:\/\//i.test(v.trim());
+
+                let lyrics = null;
+                let b64List = null;
+
+                if (isUrl(otoUrlRaw) && isUrl(uUrlRaw)) {
+                    const otoUrl = convertToRawGithubUrl(otoUrlRaw.trim());
+                    const uUrl = convertToRawGithubUrl(uUrlRaw.trim());
+                    const [otoRes, uRes] = await Promise.all([fetch(otoUrl), fetch(uUrl)]);
+                    if (!otoRes.ok) throw new Error('otoUrl の取得に失敗: HTTP ' + otoRes.status);
+                    if (!uRes.ok) throw new Error('uUrl の取得に失敗: HTTP ' + uRes.status);
+                    const otoText = await otoRes.text();
+                    const uText = await uRes.text();
+                    lyrics = otoText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+                    b64List = uText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+                } else {
+                    // Fallback: embedded arrays or multiline strings (same pairing rule)
+                    const splitLines = (v) => {
+                        if (v == null) return null;
+                        if (Array.isArray(v)) return v.map(x => String(x == null ? '' : x).trim()).filter(s => s.length > 0);
+                        if (typeof v === 'string') return v.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+                        return null;
+                    };
+                    lyrics = splitLines(data.lyrics != null ? data.lyrics : data.oto);
+                    b64List = splitLines(data.base64 != null ? data.base64 : data.u);
+                    if ((!lyrics || !b64List) && Array.isArray(data.phonemes) && data.phonemes[0] && typeof data.phonemes[0] === 'object') {
+                        lyrics = data.phonemes.map(p => String(p.lyric || p.label || p.oto || '').trim()).filter(Boolean);
+                        b64List = data.phonemes.map(p => String(p.base64 || p.b64 || p.audio || p.data || '').trim()).filter(Boolean);
+                    }
+                }
+
+                if (!Array.isArray(lyrics) || !Array.isArray(b64List)) {
+                    throw new Error('otoUrl と uUrl（Nekoと同じURL形式）を指定してください。\n例: {"name":"...","otoUrl":"https://.../oto.ini","uUrl":"https://.../u.txt"}');
+                }
+                if (lyrics.length === 0 || b64List.length === 0) {
+                    throw new Error('音素データが空です。URL先のファイルを確認してください。');
+                }
+                if (lyrics.length !== b64List.length) {
+                    console.warn('lyrics数とbase64数が一致しません:', lyrics.length, 'vs', b64List.length, '→ 少ない方に合わせます');
+                }
+
+                const vbId = (data.id || data.key)
+                    ? String(data.id || data.key).trim()
+                    : ('vb_' + vbName.replace(/\s+/g, '_').toLowerCase() + '_' + Date.now());
+                const buffers = {};
+                let loadedCount = 0;
+                const minLen = Math.min(lyrics.length, b64List.length);
+
+                for (let i = 0; i < minLen; i++) {
+                    const lyric = String(lyrics[i] || '').trim();
+                    const b64 = String(b64List[i] || '').trim();
+                    if (!lyric || !b64) continue;
+                    try {
+                        const arrayBuffer = base64ToArrayBuffer(b64);
+                        const audioBuf = await this.ctx.decodeAudioData(arrayBuffer.slice(0));
+                        buffers[lyric] = audioBuf;
+                        loadedCount++;
+                    } catch (err) {
+                        console.warn('decode failed for', lyric, err);
+                    }
+                }
+
+                if (loadedCount === 0) {
+                    throw new Error('Base64音声のデコードに失敗しました。u.txt の形式を確認してください。');
+                }
+
+                samplePitchCache.clear();
+
+                this.voicebanks[vbId] = {
+                    id: vbId,
+                    name: vbName,
+                    buffers: buffers,
+                    themeColor: themeColor,
+                    defaultPitchMethod: defaultPitchMethod,
+                    otoUrl: isUrl(otoUrlRaw) ? otoUrlRaw : null,
+                    uUrl: isUrl(uUrlRaw) ? uUrlRaw : null
+                };
+
+                samplePitchMethod = defaultPitchMethod;
+                const pitchSel = document.getElementById('sample-pitch-method');
+                if (pitchSel) pitchSel.value = defaultPitchMethod;
+
+                applyThemeColor(themeColor);
+
+                const modeSelect = document.getElementById('singer-mode');
+                const shouldSelect = options.select !== false;
+                if (modeSelect) {
+                    let opt = Array.from(modeSelect.options).find(o => o.value === vbId);
+                    if (!opt) {
+                        opt = document.createElement('option');
+                        opt.value = vbId;
+                        modeSelect.appendChild(opt);
+                    }
+                    opt.innerText = `${vbName} (${loadedCount}音素)`;
+                    opt.dataset.theme = themeColor;
+                    if (shouldSelect) {
+                        modeSelect.value = vbId;
+                        this.mode = vbId;
+                    }
+                }
+
+                return { vbId, loadedCount, name: vbName, themeColor, defaultPitchMethod };
+            }
+
+            /** Load all entries from VOICEBANKS (edit that array in the HTML). */
+            async loadVoicebanksFromConfig() {
+                if (!Array.isArray(VOICEBANKS) || VOICEBANKS.length === 0) {
+                    showStudioLoading('ボイスバンクが設定されていません');
+                    return;
+                }
+                if (!this.isInit) this.init();
+                showStudioLoading('ボイスバンクを読み込んでいます…');
+                const statusEl = document.getElementById('voicebank-status');
+                let firstOk = true;
+                let loadedNames = [];
+                for (const entry of VOICEBANKS) {
+                    if (!entry || !entry.name) continue;
+                    try {
+                        if (statusEl) {
+                            statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-cyan-500"></i> ${entry.name} をロード中...`;
+                        }
+                        showStudioLoading(`${entry.name} を準備しています…`);
+                        const result = await this.registerCustomVoicebank(entry, { select: firstOk });
+                        firstOk = false;
+                        loadedNames.push(`${result.name}(${result.loadedCount})`);
+                        console.log('Voicebank loaded:', result.name, result.loadedCount);
+                    } catch (err) {
+                        console.error('Failed to load voicebank', entry.name, err);
+                        if (statusEl) {
+                            statusEl.innerHTML = `<i class="fa-solid fa-circle-exclamation text-red-500"></i> ${entry.name} の読込失敗`;
+                        }
+                    }
+                }
+                if (statusEl && loadedNames.length > 0) {
+                    statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500"></i> ${loadedNames.join(' / ')}`;
+                }
+                // Brief pause so the user sees the ready state
+                showStudioLoading('スタジオの準備が完了しました');
+                await new Promise(r => setTimeout(r, 350));
+                hideStudioLoading();
+            }
+
+            midiToFreq(midi) {
+                return 440 * Math.pow(2, (midi - 69) / 12);
+            }
+
+            playNote(midiNote, durationSec, lyric = 'あ', startTime = null, originalLyric = null, noteParams = null) {
+                if (lyric === 'っ') return;
+                if (!this.isInit) this.init();
+                if (window.AudioContext && this.ctx instanceof AudioContext && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+
+                const now = startTime !== null ? startTime : this.ctx.currentTime;
+                const kanaInfo = KANA_MAP[lyric] || { c: '', v: 'あ' };
+                const np = noteParams || {};
+                const noteVol = typeof np.volume === 'number' ? np.volume : 1.0;
+                const noteVib = (typeof np.vibrato === 'number' && np.vibrato >= 0) ? np.vibrato : this.params.vibrato;
+                const notePitchOff = typeof np.pitchOffset === 'number' ? np.pitchOffset : 0;
+                const noteCents = typeof np.pitchCents === 'number' ? np.pitchCents : 0;
+                const effectiveMidi = midiNote + notePitchOff + noteCents / 100;
+                const notePitchMethod = (np.pitchMethod === 'psola' || np.pitchMethod === 'world' || np.pitchMethod === 'rate' || np.pitchMethod === 'formant-pitch')
+                    ? np.pitchMethod : '';
+                const animeStyleOn = this.params.animeStyle && np.animeStyle !== false;
+                const animeStrength = animeStyleOn ? Math.max(0, Math.min(1, this.params.animeStyleStrength || 0.6)) : 0;
+
+                // Handle custom JSON sample voicebank
+                if (this.voicebanks[this.mode]) {
+                    const vb = this.voicebanks[this.mode];
+                    const sampleBuf = vb.buffers[lyric] ||
+                                      vb.buffers[kanaInfo.v] ||
+                                      (originalLyric ? vb.buffers[originalLyric] : null) ||
+                                      Object.values(vb.buffers)[0];
+                    if (sampleBuf) {
+                        this.playSampleBankNote(effectiveMidi, durationSec, lyric, now, sampleBuf, kanaInfo, noteVol, noteVib, notePitchMethod);
+                        return;
+                    }
+                }
+
+                // Handle default Neko voicebank (same pitch pipeline as custom JSON banks)
+                if (this.mode === 'neko') {
+                    const sampleBuf = this.sampleBuffers[lyric] || 
+                                      this.sampleBuffers[kanaInfo.v] || 
+                                      (originalLyric ? this.sampleBuffers[originalLyric] : null) ||
+                                      Object.values(this.sampleBuffers)[0];
+                    if (sampleBuf) {
+                        this.playSampleBankNote(effectiveMidi, durationSec, lyric, now, sampleBuf, kanaInfo, noteVol, noteVib, notePitchMethod);
+                        return;
+                    }
+                }
+
+                // Formant Synth Fallback / Cyber Singer
+                const freq = this.midiToFreq(effectiveMidi);
+                const genderShift = Math.pow(2, this.params.gender / 24);
+
+                const osc = this.ctx.createOscillator();
+                osc.type = 'sawtooth';
+                if (animeStyleOn && typeof np.glideFromMidi === 'number' && durationSec > 0.08) {
+                    const fromFreq = this.midiToFreq(np.glideFromMidi);
+                    const glideDuration = Math.min(durationSec * 0.28, 0.035 + animeStrength * 0.055);
+                    osc.frequency.setValueAtTime(fromFreq, now);
+                    osc.frequency.linearRampToValueAtTime(freq, now + glideDuration);
+                } else {
+                    osc.frequency.setValueAtTime(freq, now);
+                }
+
+                if (noteVib > 0) {
+                    const lfo = this.ctx.createOscillator();
+                    const lfoGain = this.ctx.createGain();
+                    lfo.frequency.setValueAtTime(5.2, now);
+                    lfoGain.gain.setValueAtTime(0, now);
+                    const vibDelay = this.params.naturalize ? Math.min(durationSec * 0.45, 0.12) : 0;
+                    const vibDepth = freq * (noteVib * 0.08) * (this.params.naturalize ? 0.78 : 1);
+                    lfoGain.gain.setValueAtTime(0, now + vibDelay);
+                    lfoGain.gain.linearRampToValueAtTime(vibDepth, now + vibDelay + Math.min(0.22, durationSec * 0.35));
+                    lfo.connect(lfoGain);
+                    lfoGain.connect(osc.frequency);
+                    lfo.start(now);
+                    lfo.stop(now + durationSec + 0.1);
+                    this.activeNodes.push(lfo);
+                }
+
+                const env = this.ctx.createGain();
+                const natural = np.naturalize && this.params.naturalize;
+                const ns = natural ? (np.naturalizeStrength || this.params.naturalizeStrength || 0.65) : 0;
+                const attack = natural ? Math.min(0.075, 0.018 + ns * 0.045, durationSec * 0.25) : 0.02;
+                const release = natural ? Math.min(0.12, 0.025 + ns * 0.075, durationSec * 0.3) : 0.03;
+                env.gain.setValueAtTime(0, now);
+                env.gain.linearRampToValueAtTime(noteVol, now + Math.max(0.004, attack));
+                env.gain.setValueAtTime(noteVol * (natural ? 0.96 : 0.9), now + Math.max(attack + 0.005, durationSec - release));
+                env.gain.linearRampToValueAtTime(0, now + durationSec);
+
+                const formants = FORMANT_MAP[kanaInfo.v] || FORMANT_MAP['あ'];
+                const f1 = this.ctx.createBiquadFilter();
+                const f2 = this.ctx.createBiquadFilter();
+                const f3 = this.ctx.createBiquadFilter();
+
+                f1.type = 'bandpass';
+                f1.frequency.setValueAtTime(formants[0] * genderShift * (1 + animeStrength * 0.025), now);
+                f1.Q.value = 5 + animeStrength * 0.5;
+
+                f2.type = 'bandpass';
+                f2.frequency.setValueAtTime(formants[1] * genderShift * (1 + animeStrength * 0.075), now);
+                f2.Q.value = 7 + animeStrength * 1.0;
+
+                f3.type = 'bandpass';
+                f3.frequency.setValueAtTime(formants[2] * genderShift * (1 + animeStrength * 0.055), now);
+                f3.Q.value = 9 + animeStrength * 0.75;
+
+                osc.connect(f1);
+                osc.connect(f2);
+                osc.connect(f3);
+
+                const voiceMix = this.ctx.createGain();
+                voiceMix.gain.value = 0.5;
+
+                f1.connect(voiceMix);
+                f2.connect(voiceMix);
+                f3.connect(voiceMix);
+
+                voiceMix.connect(env);
+                env.connect(this.masterGain);
+
+                this.activeNodes.push(osc);
+                osc.onended = () => {
+                    const idx = this.activeNodes.indexOf(osc);
+                    if (idx !== -1) this.activeNodes.splice(idx, 1);
+                };
+
+                osc.start(now);
+                osc.stop(now + durationSec + 0.05);
+            }
+
+            playSampleNote(midiNote, durationSec, lyric, startTime, sampleBuf, noteVol = 1.0, noteVib = null) {
+                const src = this.ctx.createBufferSource();
+                src.buffer = sampleBuf;
+
+                const rate = Math.pow(2, (midiNote - 60) / 12);
+                src.playbackRate.setValueAtTime(rate, startTime);
+
+                const vib = noteVib !== null ? noteVib : this.params.vibrato;
+                // Apply vibrato pitch modulation for sample voice
+                if (vib > 0) {
+                    const lfo = this.ctx.createOscillator();
+                    const lfoGain = this.ctx.createGain();
+                    lfo.frequency.setValueAtTime(5.2, startTime);
+                    lfoGain.gain.setValueAtTime(0, startTime);
+                    const vibDelay = this.params.naturalize ? Math.min(durationSec * 0.45, 0.12) : 0;
+                    const vibDepth = rate * (vib * 0.08) * (this.params.naturalize ? 0.78 : 1);
+                    lfoGain.gain.setValueAtTime(0, startTime + vibDelay);
+                    lfoGain.gain.linearRampToValueAtTime(vibDepth, startTime + vibDelay + Math.min(0.22, durationSec * 0.35));
+                    lfo.connect(lfoGain);
+                    lfoGain.connect(src.playbackRate);
+                    lfo.start(startTime);
+                    lfo.stop(startTime + durationSec + 0.1);
+                    this.activeNodes.push(lfo);
+                }
+
+                const env = this.ctx.createGain();
+                const natural = this.params.naturalize;
+                const ns = natural ? (this.params.naturalizeStrength || 0.65) : 0;
+                const attack = natural ? Math.min(0.065, 0.012 + ns * 0.04, durationSec * 0.22) : 0.015;
+                const release = natural ? Math.min(0.11, 0.025 + ns * 0.07, durationSec * 0.28) : 0.03;
+                env.gain.setValueAtTime(0, startTime);
+                env.gain.linearRampToValueAtTime(noteVol, startTime + Math.max(0.004, attack));
+                env.gain.setValueAtTime(noteVol * (natural ? 0.97 : 1), startTime + Math.max(attack + 0.005, durationSec - release));
+                env.gain.linearRampToValueAtTime(0, startTime + durationSec);
+
+                src.connect(env);
+                env.connect(this.masterGain);
+
+                this.activeNodes.push(src);
+                src.onended = () => {
+                    const idx = this.activeNodes.indexOf(src);
+                    if (idx !== -1) this.activeNodes.splice(idx, 1);
+                };
+
+                src.start(startTime);
+                src.stop(startTime + durationSec + 0.05);
+            }
+
+            playSampleBankNote(midiNote, durationSec, lyric, startTime, sampleBuf, kanaInfo, noteVol = 1.0, noteVib = null, notePitchMethod = '') {
+                // Pitch via PSOLA / WORLD-like / playbackRate (per-note or global)
+                const vbId = this.mode;
+                const algo = (notePitchMethod === 'psola' || notePitchMethod === 'world' || notePitchMethod === 'rate' || notePitchMethod === 'formant-pitch')
+                    ? notePitchMethod
+                    : (samplePitchMethod || 'psola');
+                const useRate = (algo === 'rate' || algo === 'formant-pitch');
+                const useFormantPitch = (algo === 'formant-pitch');
+                let pitchedBuf = sampleBuf;
+                if (!useRate) {
+                    try {
+                        pitchedBuf = getPitchedSampleBuffer(this, vbId, lyric, midiNote, sampleBuf, algo);
+                    } catch (e) {
+                        pitchedBuf = sampleBuf;
+                    }
+                }
+
+                const src = this.ctx.createBufferSource();
+                src.buffer = pitchedBuf;
+
+                // CRITICAL: psola/world must stay at rate=1.0 (pitch already baked in).
+                // Never slow down rate to fill long notes — that was dropping pitch.
+                // Long notes: loop the pitched sample instead.
+                let playRate = 1.0;
+                if (useRate || pitchedBuf === sampleBuf) {
+                    playRate = Math.pow(2, (midiNote - 60) / 12);
+                }
+                src.playbackRate.setValueAtTime(playRate, startTime);
+
+                const sampleDur = pitchedBuf.duration / Math.max(playRate, 0.01);
+                if ((!useRate || useFormantPitch) && durationSec > sampleDur * 1.05) {
+                    // Loop middle portion of phoneme for sustained notes
+                    const n = pitchedBuf.length;
+                    const loopStart = Math.floor(n * 0.25);
+                    const loopEnd = Math.max(loopStart + 64, Math.floor(n * 0.85));
+                    src.loop = true;
+                    src.loopStart = loopStart / pitchedBuf.sampleRate;
+                    src.loopEnd = loopEnd / pitchedBuf.sampleRate;
+                }
+
+                const vib = noteVib !== null ? noteVib : this.params.vibrato;
+                if (vib > 0) {
+                    const lfo = this.ctx.createOscillator();
+                    const lfoGain = this.ctx.createGain();
+                    lfo.frequency.setValueAtTime(5.2, startTime);
+                    lfoGain.gain.setValueAtTime(0, startTime);
+                    // Naturalization delays vibrato until the note is sustained, preserving the original timbre.
+                    const vibDelay = this.params.naturalize ? Math.min(durationSec * 0.45, 0.12) : 0;
+                    const vibDepth = playRate * (vib * 0.05) * (this.params.naturalize ? 0.78 : 1);
+                    lfoGain.gain.setValueAtTime(0, startTime + vibDelay);
+                    lfoGain.gain.linearRampToValueAtTime(vibDepth, startTime + vibDelay + Math.min(0.22, durationSec * 0.35));
+                    lfo.connect(lfoGain);
+                    lfoGain.connect(src.playbackRate);
+                    lfo.start(startTime);
+                    lfo.stop(startTime + durationSec + 0.1);
+                    this.activeNodes.push(lfo);
+                }
+
+                const env = this.ctx.createGain();
+                const natural = this.params.naturalize;
+                const ns = natural ? (this.params.naturalizeStrength || 0.65) : 0;
+                const attack = natural ? Math.min(0.065, 0.012 + ns * 0.04, durationSec * 0.22) : 0.015;
+                const release = natural ? Math.min(0.11, 0.025 + ns * 0.07, durationSec * 0.28) : 0.03;
+                env.gain.setValueAtTime(0, startTime);
+                env.gain.linearRampToValueAtTime(noteVol, startTime + Math.max(0.004, attack));
+                env.gain.setValueAtTime(noteVol * (natural ? 0.97 : 1), startTime + Math.max(attack + 0.005, durationSec - release));
+                env.gain.linearRampToValueAtTime(0, startTime + durationSec);
+
+                if (vbId === 'neko') {
+                    // Neko samples already contain their own vocal formants. Adding
+                    // three extra band-pass filters and two mix gains to every note
+                    // creates hundreds/thousands of unnecessary WebAudio nodes in
+                    // long songs, which can make playback glitch on modest devices.
+                    // Keep Neko's original sample timbre and use a lightweight path.
+                    src.connect(env);
+                } else {
+                    // Keep the existing formant-color path for custom sample banks.
+                    const genderShift = Math.pow(2, (this.params.gender || 12) / 24);
+                    const formants = FORMANT_MAP[kanaInfo.v] || FORMANT_MAP['あ'];
+
+                    const f1 = this.ctx.createBiquadFilter();
+                    const f2 = this.ctx.createBiquadFilter();
+                    const f3 = this.ctx.createBiquadFilter();
+
+                    f1.type = 'bandpass';
+                    const animeStrength = this.params.animeStyle ? Math.max(0, Math.min(1, this.params.animeStyleStrength || 0.6)) : 0;
+                    f1.frequency.setValueAtTime(formants[0] * genderShift * (1 + animeStrength * 0.025), startTime);
+                    f1.Q.value = 5 + animeStrength * 0.5;
+
+                    f2.type = 'bandpass';
+                    f2.frequency.setValueAtTime(formants[1] * genderShift * (1 + animeStrength * 0.075), startTime);
+                    f2.Q.value = 7 + animeStrength * 1.0;
+
+                    f3.type = 'bandpass';
+                    f3.frequency.setValueAtTime(formants[2] * genderShift * (1 + animeStrength * 0.055), startTime);
+                    f3.Q.value = 9 + animeStrength * 0.75;
+
+                    const voiceMix = this.ctx.createGain();
+                    voiceMix.gain.value = 0.4;
+                    const dryMix = this.ctx.createGain();
+                    dryMix.gain.value = 0.6;
+
+                    src.connect(dryMix);
+                    src.connect(f1);
+                    src.connect(f2);
+                    src.connect(f3);
+                    f1.connect(voiceMix);
+                    f2.connect(voiceMix);
+                    f3.connect(voiceMix);
+                    dryMix.connect(env);
+                    voiceMix.connect(env);
+                }
+                env.connect(this.masterGain);
+
+                this.activeNodes.push(src);
+                src.onended = () => {
+                    const idx = this.activeNodes.indexOf(src);
+                    if (idx !== -1) this.activeNodes.splice(idx, 1);
+                };
+
+                src.start(startTime);
+                src.stop(startTime + durationSec + 0.05);
+            }
+        }
+
+        const synth = new VocaloidSynthEngine();
+
+        // Studio loading overlay helpers
+        function showStudioLoading(message) {
+            const el = document.getElementById('studio-loading');
+            const msg = document.getElementById('studio-loading-msg');
+            if (msg && message) msg.textContent = message;
+            if (el) {
+                el.classList.remove('is-hidden');
+                el.setAttribute('aria-busy', 'true');
+            }
+        }
+        function hideStudioLoading() {
+            const el = document.getElementById('studio-loading');
+            if (el) {
+                el.classList.add('is-hidden');
+                el.setAttribute('aria-busy', 'false');
+            }
+        }
+
+        // Pre-process sample PSOLA buffers after edits, not when playback starts.
+        // Moving notes only changes startTick, so their already-rendered audio is reused.
+        let samplePreprocessTimer = null;
+        let samplePreprocessGeneration = 0;
+        function scheduleSamplePreprocess(delay = 180) {
+            if (samplePreprocessTimer) clearTimeout(samplePreprocessTimer);
+            const generation = ++samplePreprocessGeneration;
+            samplePreprocessTimer = setTimeout(() => {
+                samplePreprocessTimer = null;
+                if (!synth.ctx || !state || !state.notes) return;
+                const isCustom = !!synth.voicebanks[synth.mode];
+                const isNeko = synth.mode === 'neko';
+                if (!isCustom && !isNeko) return;
+                const buffers = isCustom ? synth.voicebanks[synth.mode].buffers : synth.sampleBuffers;
+                if (!buffers || Object.keys(buffers).length === 0) return;
+                const work = state.notes.slice().sort((a, b) => a.startTick - b.startTick);
+                let index = 0;
+                const processNext = () => {
+                    if (generation !== samplePreprocessGeneration) return;
+                    if (index >= work.length) return;
+                    const note = work[index++];
+                    try {
+                        if (note.lyric && note.lyric !== 'っ') {
+                            const lyric = getEffectiveLyric(note, state.notes);
+                            const kanaInfo = KANA_MAP[lyric] || { c: '', v: 'あ' };
+                            const sampleBuf = buffers[lyric] || buffers[kanaInfo.v] || buffers[note.lyric] || Object.values(buffers)[0];
+                            const method = (note.pitchMethod === 'psola' || note.pitchMethod === 'world' || note.pitchMethod === 'rate' || note.pitchMethod === 'formant-pitch') ? note.pitchMethod : (samplePitchMethod || 'rate');
+                            if (sampleBuf && method !== 'rate' && method !== 'formant-pitch') {
+                                const effectiveMidi = (Number(note.pitch) || 60) + (Number(note.pitchOffset) || 0) + (Number(note.pitchCents) || 0) / 100;
+                                getPitchedSampleBuffer(synth, synth.mode, lyric, effectiveMidi, sampleBuf, method);
+                            }
+                        }
+                    } catch (e) { /* keep editing usable even if one phoneme fails */ }
+                    setTimeout(processNext, 0);
+                };
+                processNext();
+            }, delay);
+        }
+
+        // Default per-note params helper
+        function defaultNoteParams() {
+            return { volume: 1.0, vibrato: -1, reverb: -1, pitchOffset: 0, pitchCents: 0, pitchMethod: '' };
+        }
+
+        function normalizeNote(n) {
+            return {
+                id: n.id,
+                startTick: n.startTick,
+                pitch: n.pitch,
+                durationTicks: n.durationTicks,
+                lyric: n.lyric || 'あ',
+                volume: typeof n.volume === 'number' ? n.volume : 1.0,
+                vibrato: typeof n.vibrato === 'number' ? n.vibrato : -1,
+                reverb: typeof n.reverb === 'number' ? n.reverb : -1,
+                pitchOffset: typeof n.pitchOffset === 'number' ? n.pitchOffset : 0,
+                pitchCents: typeof n.pitchCents === 'number' ? n.pitchCents : 0,
+                pitchMethod: (n.pitchMethod === 'psola' || n.pitchMethod === 'world' || n.pitchMethod === 'rate' || n.pitchMethod === 'formant-pitch') ? n.pitchMethod : ''
+            };
+        }
+
+        /** Effective pitch shift in semitones (coarse + cents). */
+        function getNotePitchShiftSemitones(note) {
+            const coarse = typeof note.pitchOffset === 'number' ? note.pitchOffset : 0;
+            const cents = typeof note.pitchCents === 'number' ? note.pitchCents : 0;
+            return coarse + cents / 100;
+        }
+
+        /** Resolve sample pitch algorithm: per-note override or global sidebar. */
+        function resolvePitchMethod(note) {
+            if (note && (note.pitchMethod === 'psola' || note.pitchMethod === 'world' || note.pitchMethod === 'rate' || note.pitchMethod === 'formant-pitch')) {
+                return note.pitchMethod;
+            }
+            return samplePitchMethod || 'psola';
+        }
+
+        // Application State
+        const state = {
+            notes: [
+                { id: 1, startTick: 0, pitch: 60, durationTicks: 4, lyric: 'さ', volume: 1, vibrato: -1, reverb: -1, pitchOffset: 0, pitchCents: 0, pitchMethod: '' },
+                { id: 2, startTick: 4, pitch: 62, durationTicks: 4, lyric: 'ー', volume: 1, vibrato: -1, reverb: -1, pitchOffset: 0, pitchCents: 0, pitchMethod: '' },
+                { id: 3, startTick: 8, pitch: 64, durationTicks: 4, lyric: 'い', volume: 1, vibrato: -1, reverb: -1, pitchOffset: 0, pitchCents: 0, pitchMethod: '' },
+                { id: 4, startTick: 12, pitch: 65, durationTicks: 4, lyric: 'た', volume: 1, vibrato: -1, reverb: -1, pitchOffset: 0, pitchCents: 0, pitchMethod: '' }
+            ],
+            bpm: 120,
+            isPlaying: false,
+            currentTick: 0,
+            playbackStartTick: 0,
+            playbackStartTime: 0,
+            totalTicks: 64,
+            selectedNoteForModal: null,
+            moveModeNoteId: null,
+            selectedNoteIds: new Set(),
+            clipboard: [],
+            audioTrackBuffer: null,
+            audioTrackName: '',
+            audioTrackSource: null,
+            audioTrackGain: null,
+            detectedBpm: null,
+            // Undo / Redo
+            history: [],
+            historyIndex: -1,
+            maxHistory: 50,
+            historyLocked: false
+        };
+
+        function cloneNotes(notes) {
+            return notes.map(n => ({ ...n }));
+        }
+
+        function pushHistory() {
+            if (state.historyLocked) return;
+            // Drop redo branch
+            if (state.historyIndex < state.history.length - 1) {
+                state.history = state.history.slice(0, state.historyIndex + 1);
+            }
+            state.history.push(cloneNotes(state.notes));
+            if (state.history.length > state.maxHistory) {
+                state.history.shift();
+            } else {
+                state.historyIndex++;
+            }
+            // Clamp index after shift
+            state.historyIndex = Math.min(state.historyIndex, state.history.length - 1);
+            updateUndoRedoButtons();
+        }
+
+        function undo() {
+            if (state.historyIndex <= 0) return;
+            state.historyLocked = true;
+            state.historyIndex--;
+            state.notes = cloneNotes(state.history[state.historyIndex]);
+            markNotesDirty();
+            state.selectedNoteIds.clear();
+            closeNoteModal();
+            requestDraw();
+            state.historyLocked = false;
+            updateUndoRedoButtons();
+        }
+
+        function redo() {
+            if (state.historyIndex >= state.history.length - 1) return;
+            state.historyLocked = true;
+            state.historyIndex++;
+            state.notes = cloneNotes(state.history[state.historyIndex]);
+            markNotesDirty();
+            state.selectedNoteIds.clear();
+            closeNoteModal();
+            requestDraw();
+            state.historyLocked = false;
+            updateUndoRedoButtons();
+        }
+
+        function updateUndoRedoButtons() {
+            const undoBtn = document.getElementById('btn-undo');
+            const redoBtn = document.getElementById('btn-redo');
+            if (undoBtn) undoBtn.disabled = state.historyIndex <= 0;
+            if (redoBtn) redoBtn.disabled = state.historyIndex >= state.history.length - 1 || state.history.length === 0;
+        }
+
+        function extractLyrics() {
+            ensureNotesSorted();
+            const lines = state.notes.map(n => n.lyric || '');
+            const continuous = lines.join(' ');
+            return { continuous, lines };
+        }
+
+        function showLyricModal() {
+            const { continuous, lines } = extractLyrics();
+            const contEl = document.getElementById('lyric-text-continuous');
+            const linesEl = document.getElementById('lyric-text-lines');
+            if (contEl) contEl.value = continuous;
+            if (linesEl) linesEl.value = lines.join('\n');
+            const modal = document.getElementById('lyric-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function hideLyricModal() {
+            const modal = document.getElementById('lyric-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        // --- Performance helpers (for 200+ notes; viewport-sized canvas) ---
+        let notesSortedDirty = true;
+        let drawScheduled = false;
+
+        function ensureNotesSorted() {
+            if (!notesSortedDirty) return;
+            state.notes.sort((a, b) => a.startTick - b.startTick || a.pitch - b.pitch || a.id - b.id);
+            notesSortedDirty = false;
+        }
+
+        function markNotesDirty() {
+            notesSortedDirty = true;
+        }
+
+        function requestDraw() {
+            if (drawScheduled) return;
+            drawScheduled = true;
+            requestAnimationFrame(() => {
+                drawScheduled = false;
+                drawGrid();
+                drawRuler();
+            });
+        }
+
+        function updateBarCountBadge() {
+            const badge = document.getElementById('bar-count-badge');
+            if (badge) {
+                const bars = Math.ceil(state.totalTicks / 4);
+                badge.innerText = `${bars}`;
+            }
+        }
+
+        function addMeasures(addBars = 8) {
+            state.totalTicks += addBars * 4;
+            updateBarCountBadge();
+            resizeCanvases();
+        }
+
+        function ensureTickInBounds(tick) {
+            if (tick >= state.totalTicks) {
+                const neededBars = Math.ceil((tick - state.totalTicks + 8) / 4);
+                const expandBars = Math.max(8, Math.ceil(neededBars / 8) * 8);
+                state.totalTicks += expandBars * 4;
+                updateBarCountBadge();
+                resizeCanvases();
+            }
+        }
+
+        // Web Audio API Beat/BPM Detection Algorithm
+        async function analyzeAudioBpm(audioBuffer) {
+            const rawData = audioBuffer.getChannelData(0);
+            const sampleRate = audioBuffer.sampleRate;
+            
+            const step = Math.floor(sampleRate / 100);
+            const energies = [];
+            for (let i = 0; i < rawData.length; i += step) {
+                let sum = 0;
+                for (let j = 0; j < step && (i + j) < rawData.length; j++) {
+                    sum += Math.abs(rawData[i + j]);
+                }
+                energies.push(sum / step);
+            }
+
+            const peaks = [];
+            const threshold = 0.22;
+            for (let i = 1; i < energies.length - 1; i++) {
+                if (energies[i] > threshold && energies[i] > energies[i - 1] && energies[i] > energies[i + 1]) {
+                    peaks.push(i * 10);
+                }
+            }
+
+            const intervals = [];
+            for (let i = 0; i < peaks.length - 1; i++) {
+                for (let j = i + 1; j < Math.min(i + 8, peaks.length); j++) {
+                    const diff = peaks[j] - peaks[i];
+                    if (diff >= 300 && diff <= 1000) {
+                        intervals.push(diff);
+                    }
+                }
+            }
+
+            if (intervals.length === 0) return 120;
+
+            const counts = {};
+            intervals.forEach(intVal => {
+                const rounded = Math.round(intVal / 10) * 10;
+                counts[rounded] = (counts[rounded] || 0) + 1;
+            });
+
+            let topInterval = 500;
+            let maxCount = 0;
+            Object.keys(counts).forEach(k => {
+                if (counts[k] > maxCount) {
+                    maxCount = counts[k];
+                    topInterval = parseInt(k);
+                }
+            });
+
+            const calculatedBpm = Math.round(60000 / topInterval);
+            return Math.min(200, Math.max(60, calculatedBpm));
+        }
+
+        const MIN_MIDI = 36;
+        const MAX_MIDI = 84;
+        const KEY_HEIGHT = 28;
+        const GRID_STEP_PX = 22;
+
+        let gridCanvas, gridCtx, rulerCanvas, rulerCtx, pianoKeysContainer;
+
+        function initPianoKeys() {
+            if (!pianoKeysContainer) return;
+            pianoKeysContainer.innerHTML = '';
+            const border = getCssVar('--border', '#e2e8f0');
+            for (let m = MAX_MIDI; m >= MIN_MIDI; m--) {
+                const key = document.createElement('div');
+                const isBlack = [1, 3, 6, 8, 10].includes(m % 12);
+                key.style.height = `${KEY_HEIGHT}px`;
+                key.style.borderBottom = `1px solid ${border}`;
+                key.style.display = 'flex';
+                key.style.alignItems = 'center';
+                key.style.justifyContent = 'flex-end';
+                key.style.paddingRight = '8px';
+                key.style.fontSize = '10px';
+                key.style.fontFamily = 'ui-monospace, monospace';
+                key.style.userSelect = 'none';
+                if (isBlack) {
+                    key.style.background = getCssVar('--piano-black', '#0f172a');
+                    key.style.color = getCssVar('--piano-black-text', '#e2e8f0');
+                    key.style.fontWeight = '500';
+                } else {
+                    key.style.background = getCssVar('--piano-white', '#ffffff');
+                    key.style.color = getCssVar('--piano-white-text', '#334155');
+                    key.style.fontWeight = '600';
+                }
+                if (m % 12 === 0) {
+                    key.innerText = `C${(m / 12) - 1}`;
+                }
+                pianoKeysContainer.appendChild(key);
+            }
+        }
+
+        function resizeCanvases() {
+            if (!gridCanvas || !rulerCanvas) return;
+            const numKeys = (MAX_MIDI - MIN_MIDI) + 1;
+            const totalWidth = state.totalTicks * GRID_STEP_PX + 200;
+            const totalHeight = numKeys * KEY_HEIGHT;
+            const wrapper = document.getElementById('grid-scroll-wrapper');
+            if (!wrapper) return;
+
+            // The spacer provides the full scrollable timeline. The actual grid
+            // bitmap stays viewport-sized instead of allocating totalWidth*totalHeight.
+            let spacer = document.getElementById('grid-scroll-spacer');
+            if (!spacer) {
+                spacer = document.createElement('div');
+                spacer.id = 'grid-scroll-spacer';
+                spacer.setAttribute('aria-hidden', 'true');
+                gridCanvas.insertAdjacentElement('afterend', spacer);
+            }
+            spacer.style.width = `${totalWidth}px`;
+            spacer.style.height = `${totalHeight}px`;
+            spacer.style.pointerEvents = 'none';
+
+            const viewWidth = Math.max(1, wrapper.clientWidth);
+            const viewHeight = Math.max(1, wrapper.clientHeight - 32);
+            gridCanvas.width = viewWidth;
+            gridCanvas.height = viewHeight;
+            gridCanvas.style.width = `${viewWidth}px`;
+            gridCanvas.style.height = `${viewHeight}px`;
+            gridCanvas.style.position = 'sticky';
+            gridCanvas.style.top = '32px';
+            gridCanvas.style.left = '0px';
+            gridCanvas.style.zIndex = '5';
+            // Keep the viewport canvas over the spacer without adding its height
+            // to the scrollable document height.
+            gridCanvas.style.marginBottom = `-${viewHeight}px`;
+            gridCanvas.style.display = 'block';
+
+            // The ruler is short, so its wide backing bitmap is comparatively cheap.
+            rulerCanvas.width = totalWidth;
+            rulerCanvas.height = 32;
+            rulerCanvas.style.width = `${totalWidth}px`;
+            rulerCanvas.style.height = '32px';
+
+            drawGrid();
+            drawRuler();
+        }
+
+        function drawRuler() {
+            if (!rulerCtx) return;
+            const wrapper = document.getElementById('grid-scroll-wrapper');
+            const scrollLeft = wrapper ? wrapper.scrollLeft : 0;
+            const viewW = wrapper ? wrapper.clientWidth : rulerCanvas.width;
+            const leftTick = Math.max(0, Math.floor(scrollLeft / GRID_STEP_PX) - 1);
+            const rightTick = Math.min(state.totalTicks, Math.ceil((scrollLeft + viewW) / GRID_STEP_PX) + 1);
+
+            const bgPanel = getCssVar('--bg-panel', '#ffffff');
+            const gridBar = getCssVar('--grid-bar', '#cbd5e1');
+            const textMuted = getCssVar('--text-muted', '#64748b');
+            const accent = getCssVar('--theme-accent', '#06b6d4');
+
+            rulerCtx.clearRect(scrollLeft, 0, viewW, rulerCanvas.height);
+            rulerCtx.fillStyle = bgPanel;
+            rulerCtx.fillRect(scrollLeft, 0, viewW, rulerCanvas.height);
+            rulerCtx.strokeStyle = gridBar;
+            rulerCtx.fillStyle = textMuted;
+            rulerCtx.font = '500 11px Inter, sans-serif';
+
+            for (let t = leftTick; t <= rightTick; t++) {
+                const x = t * GRID_STEP_PX;
+                if (t % 4 === 0) {
+                    rulerCtx.beginPath();
+                    rulerCtx.moveTo(x, 14);
+                    rulerCtx.lineTo(x, 32);
+                    rulerCtx.stroke();
+                    rulerCtx.fillText(`${(t / 4) + 1}`, x + 4, 12);
+                } else {
+                    rulerCtx.beginPath();
+                    rulerCtx.moveTo(x, 22);
+                    rulerCtx.lineTo(x, 32);
+                    rulerCtx.stroke();
+                }
+            }
+
+            const px = state.currentTick * GRID_STEP_PX;
+            if (px >= scrollLeft - 8 && px <= scrollLeft + viewW + 8) {
+                rulerCtx.fillStyle = accent;
+                rulerCtx.beginPath();
+                rulerCtx.moveTo(px - 6, 0);
+                rulerCtx.lineTo(px + 6, 0);
+                rulerCtx.lineTo(px, 12);
+                rulerCtx.fill();
+
+                rulerCtx.strokeStyle = accent;
+                rulerCtx.lineWidth = 2;
+                rulerCtx.beginPath();
+                rulerCtx.moveTo(px, 12);
+                rulerCtx.lineTo(px, 32);
+                rulerCtx.stroke();
+                rulerCtx.lineWidth = 1;
+            }
+        }
+
+        function drawGrid() {
+            if (!gridCtx || !gridCanvas) return;
+
+            const wrapper = document.getElementById('grid-scroll-wrapper');
+            const scrollLeft = wrapper ? wrapper.scrollLeft : 0;
+            // The sticky 32px ruler occupies the first part of the scroll content.
+            const scrollTop = wrapper ? Math.max(0, wrapper.scrollTop - 32) : 0;
+            const viewW = gridCanvas.width;
+            const viewH = gridCanvas.height;
+
+            // Clear only the small viewport bitmap, then draw using timeline-space coordinates.
+            gridCtx.setTransform(1, 0, 0, 1, 0, 0);
+            gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+            gridCtx.setTransform(1, 0, 0, 1, -scrollLeft, -scrollTop);
+
+            // Viewport culling ranges (with margin for smooth scroll)
+            const marginPx = 120;
+            const visTickStart = Math.max(0, Math.floor((scrollLeft - marginPx) / GRID_STEP_PX));
+            const visTickEnd = Math.min(state.totalTicks + 1, Math.ceil((scrollLeft + viewW + marginPx) / GRID_STEP_PX));
+            const rowStart = Math.max(0, Math.floor((scrollTop - marginPx) / KEY_HEIGHT));
+            const rowEnd = Math.min((MAX_MIDI - MIN_MIDI) + 1, Math.ceil((scrollTop + viewH + marginPx) / KEY_HEIGHT));
+            const visPitchMax = MAX_MIDI - rowStart;
+            const visPitchMin = MAX_MIDI - (rowEnd - 1);
+
+            const gridWhite = getCssVar('--grid-white', '#ffffff');
+            const gridBlack = getCssVar('--grid-black', '#f1f5f9');
+            const gridLine = getCssVar('--grid-line', '#e2e8f0');
+            const gridBar = getCssVar('--grid-bar', '#cbd5e1');
+            const accent = getCssVar('--theme-accent', '#06b6d4');
+            const noteSelected = getCssVar('--note-selected', '#38bdf8');
+            const noteMulti = getCssVar('--note-multi', '#6366f1');
+            const noteMove = getCssVar('--note-move', '#f59e0b');
+
+            // Rows Background — only visible pitch range
+            for (let i = rowStart; i < rowEnd; i++) {
+                const midi = MAX_MIDI - i;
+                const isBlack = [1, 3, 6, 8, 10].includes(midi % 12);
+                gridCtx.fillStyle = isBlack ? gridBlack : gridWhite;
+                gridCtx.fillRect(scrollLeft, i * KEY_HEIGHT, viewW, KEY_HEIGHT);
+
+                gridCtx.strokeStyle = gridLine;
+                gridCtx.beginPath();
+                gridCtx.moveTo(scrollLeft, (i + 1) * KEY_HEIGHT);
+                gridCtx.lineTo(scrollLeft + viewW, (i + 1) * KEY_HEIGHT);
+                gridCtx.stroke();
+            }
+
+            // Vertical Time Columns — only visible ticks
+            for (let t = visTickStart; t <= visTickEnd; t++) {
+                const x = t * GRID_STEP_PX;
+                gridCtx.strokeStyle = (t % 4 === 0) ? gridBar : gridLine;
+                gridCtx.lineWidth = (t % 4 === 0) ? 1.5 : 1;
+                gridCtx.beginPath();
+                gridCtx.moveTo(x, rowStart * KEY_HEIGHT);
+                gridCtx.lineTo(x, rowEnd * KEY_HEIGHT);
+                gridCtx.stroke();
+            }
+
+            // Draw Notes — only those overlapping the viewport
+            ensureNotesSorted();
+            for (let i = 0; i < state.notes.length; i++) {
+                const note = state.notes[i];
+                if (note.startTick > visTickEnd) break; // sorted by startTick
+                if (note.startTick + note.durationTicks < visTickStart) continue;
+                if (note.pitch < visPitchMin || note.pitch > visPitchMax) continue;
+
+                const x = note.startTick * GRID_STEP_PX;
+                const y = (MAX_MIDI - note.pitch) * KEY_HEIGHT;
+                const w = note.durationTicks * GRID_STEP_PX;
+
+                const isMultiSelected = state.selectedNoteIds.has(note.id);
+                const isSelected = isMultiSelected || (state.selectedNoteForModal && state.selectedNoteForModal.id === note.id);
+                const isMoveMode = state.moveModeNoteId === note.id;
+
+                if (isMoveMode) {
+                    gridCtx.fillStyle = noteMove;
+                } else if (isMultiSelected) {
+                    gridCtx.fillStyle = noteMulti;
+                } else if (isSelected) {
+                    gridCtx.fillStyle = noteSelected;
+                } else {
+                    gridCtx.fillStyle = accent;
+                }
+
+                gridCtx.beginPath();
+                gridCtx.roundRect(x + 1.5, y + 2.5, w - 3, KEY_HEIGHT - 5, 6);
+                gridCtx.fill();
+
+                gridCtx.strokeStyle = isMoveMode ? '#b45309' : (isMultiSelected ? '#a5b4fc' : (isSelected ? noteMove : accent));
+                gridCtx.lineWidth = (isSelected || isMoveMode || isMultiSelected) ? 2.5 : 1;
+                if (isMoveMode) {
+                    gridCtx.setLineDash([4, 2]);
+                } else {
+                    gridCtx.setLineDash([]);
+                }
+                gridCtx.stroke();
+                gridCtx.setLineDash([]);
+
+                // Only draw lyric text if note is reasonably wide
+                if (w > 14) {
+                    gridCtx.fillStyle = '#ffffff';
+                    gridCtx.font = 'bold 12px Inter, sans-serif';
+                    gridCtx.textAlign = 'center';
+                    gridCtx.textBaseline = 'middle';
+                    const label = isMoveMode ? `✥ ${note.lyric}` : note.lyric;
+                    gridCtx.fillText(label, x + (w / 2), y + (KEY_HEIGHT / 2));
+                }
+            }
+
+            if (isBoxSelecting && selectionBox) {
+                const sx = Math.min(selectionBox.x1, selectionBox.x2);
+                const sy = Math.min(selectionBox.y1, selectionBox.y2);
+                const sw = Math.abs(selectionBox.x2 - selectionBox.x1);
+                const sh = Math.abs(selectionBox.y2 - selectionBox.y1);
+
+                gridCtx.fillStyle = 'rgba(99, 102, 241, 0.15)';
+                gridCtx.strokeStyle = '#6366f1';
+                gridCtx.lineWidth = 1.5;
+                gridCtx.setLineDash([4, 4]);
+                gridCtx.fillRect(sx, sy, sw, sh);
+                gridCtx.strokeRect(sx, sy, sw, sh);
+                gridCtx.setLineDash([]);
+            }
+
+            // Playhead Line
+            const px = state.currentTick * GRID_STEP_PX;
+            if (px >= scrollLeft - 2 && px <= scrollLeft + viewW + 2) {
+                gridCtx.strokeStyle = accent;
+                gridCtx.lineWidth = 2;
+                gridCtx.beginPath();
+                gridCtx.moveTo(px, scrollTop);
+                gridCtx.lineTo(px, scrollTop + viewH);
+                gridCtx.stroke();
+            }
+            gridCtx.setTransform(1, 0, 0, 1, 0, 0);
+        }
+
+        function getCanvasCoords(e, canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+            const clientY = (e.touches && e.touches.length > 0) ? e.touches[0].clientY : e.clientY;
+            const coords = {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+            // The grid canvas is sticky and viewport-sized, so pointer positions
+            // must be converted back to the full timeline coordinate space.
+            if (canvas === gridCanvas) {
+                const wrapper = document.getElementById('grid-scroll-wrapper');
+                if (wrapper) {
+                    coords.x += wrapper.scrollLeft;
+                    coords.y += Math.max(0, wrapper.scrollTop - 32);
+                }
+            }
+            return coords;
+        }
+
+        let activeNote = null;
+        let isDragging = false;
+        let isResizing = false;
+        let isBoxSelecting = false;
+        let selectionBox = null;
+        let pointerDownStartCoords = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        let dragStartPositions = [];
+        let touchStartTime = 0;
+        let lastTapTime = 0;
+        let lastTapNoteId = null;
+
+        function copySelectedNotes() {
+            if (state.selectedNoteIds.size === 0 && state.selectedNoteForModal) {
+                state.selectedNoteIds.add(state.selectedNoteForModal.id);
+            }
+            if (state.selectedNoteIds.size === 0) return;
+
+            const selectedNotes = state.notes.filter(n => state.selectedNoteIds.has(n.id));
+            if (selectedNotes.length === 0) return;
+
+            const minTick = Math.min(...selectedNotes.map(n => n.startTick));
+            state.clipboard = selectedNotes.map(n => ({
+                offsetTick: n.startTick - minTick,
+                pitch: n.pitch,
+                durationTicks: n.durationTicks,
+                lyric: n.lyric,
+                volume: n.volume ?? 1,
+                vibrato: n.vibrato ?? -1,
+                reverb: n.reverb ?? -1,
+                pitchOffset: n.pitchOffset ?? 0,
+                pitchCents: n.pitchCents ?? 0,
+                pitchMethod: n.pitchMethod || ''
+            }));
+        }
+
+        function pasteNotes() {
+            if (!state.clipboard || state.clipboard.length === 0) return;
+
+            const targetTick = Math.floor(state.currentTick);
+            state.selectedNoteIds.clear();
+
+            const newNotes = state.clipboard.map(item => {
+                const startTick = Math.max(0, targetTick + item.offsetTick);
+                ensureTickInBounds(startTick + item.durationTicks);
+                const newNote = {
+                    id: Date.now() + Math.floor(Math.random() * 100000),
+                    startTick: startTick,
+                    pitch: item.pitch,
+                    durationTicks: item.durationTicks,
+                    lyric: item.lyric,
+                    volume: typeof item.volume === 'number' ? item.volume : 1.0,
+                    vibrato: typeof item.vibrato === 'number' ? item.vibrato : -1,
+                    reverb: typeof item.reverb === 'number' ? item.reverb : -1,
+                    pitchOffset: typeof item.pitchOffset === 'number' ? item.pitchOffset : 0,
+                    pitchCents: typeof item.pitchCents === 'number' ? item.pitchCents : 0,
+                    pitchMethod: item.pitchMethod || ''
+                };
+                state.selectedNoteIds.add(newNote.id);
+                return newNote;
+            });
+
+            state.notes.push(...newNotes);
+            markNotesDirty();
+            scheduleSamplePreprocess(80);
+            if (newNotes.length > 0) {
+                pushHistory();
+                openNoteModal(newNotes[0]);
+            }
+            requestDraw();
+        }
+
+        function selectAllNotes() {
+            state.selectedNoteIds.clear();
+            state.notes.forEach(n => state.selectedNoteIds.add(n.id));
+            if (state.notes.length > 0) {
+                openNoteModal(state.notes[0]);
+            }
+            requestDraw();
+        }
+
+        function deleteSelectedNotes() {
+            if (state.selectedNoteIds.size > 0) {
+                state.notes = state.notes.filter(n => !state.selectedNoteIds.has(n.id));
+                state.selectedNoteIds.clear();
+                markNotesDirty();
+                pushHistory();
+                closeNoteModal();
+                requestDraw();
+            } else if (state.selectedNoteForModal) {
+                state.notes = state.notes.filter(n => n.id !== state.selectedNoteForModal.id);
+                markNotesDirty();
+                pushHistory();
+                closeNoteModal();
+                requestDraw();
+            }
+        }
+
+        function handlePointerDown(coords, isRightClick = false, isShiftPressed = false) {
+            const tick = Math.floor(coords.x / GRID_STEP_PX);
+            const pitch = MAX_MIDI - Math.floor(coords.y / KEY_HEIGHT);
+
+            if (isRightClick) {
+                deleteSelectedNotes();
+                return;
+            }
+
+            const now = Date.now();
+
+            // Fast hit-test using sorted notes + early exit
+            ensureNotesSorted();
+            const hitTick = Math.floor(coords.x / GRID_STEP_PX);
+            const hitPitch = MAX_MIDI - Math.floor(coords.y / KEY_HEIGHT);
+            let foundNote = null;
+            const margin = 4;
+            for (let i = 0; i < state.notes.length; i++) {
+                const n = state.notes[i];
+                if (n.startTick > hitTick + 2) break;
+                if (n.startTick + n.durationTicks < hitTick - 1) continue;
+                if (n.pitch !== hitPitch) continue;
+                const nx = n.startTick * GRID_STEP_PX;
+                const ny = (MAX_MIDI - n.pitch) * KEY_HEIGHT;
+                const nw = n.durationTicks * GRID_STEP_PX;
+                if (coords.x >= nx - margin && coords.x <= nx + nw + margin &&
+                    coords.y >= ny - margin && coords.y <= ny + KEY_HEIGHT + margin) {
+                    foundNote = n;
+                    break;
+                }
+            }
+
+            if (foundNote) {
+                if (isShiftPressed) {
+                    if (state.selectedNoteIds.has(foundNote.id)) {
+                        state.selectedNoteIds.delete(foundNote.id);
+                    } else {
+                        state.selectedNoteIds.add(foundNote.id);
+                    }
+                } else if (!state.selectedNoteIds.has(foundNote.id)) {
+                    state.selectedNoteIds.clear();
+                    state.selectedNoteIds.add(foundNote.id);
+                }
+
+                const nx = foundNote.startTick * GRID_STEP_PX;
+                const nw = foundNote.durationTicks * GRID_STEP_PX;
+
+                const isDoubleTap = (now - lastTapTime < 350) && (lastTapNoteId === foundNote.id);
+                lastTapTime = now;
+                lastTapNoteId = foundNote.id;
+
+                if (isDoubleTap) {
+                    state.moveModeNoteId = foundNote.id;
+                    openNoteModal(foundNote);
+                    isDragging = true;
+                    activeNote = foundNote;
+                    dragOffsetX = coords.x - nx;
+                    dragOffsetY = coords.y - ((MAX_MIDI - foundNote.pitch) * KEY_HEIGHT);
+
+                    dragStartPositions = state.notes
+                        .filter(n => state.selectedNoteIds.has(n.id))
+                        .map(n => ({ id: n.id, startTick: n.startTick, pitch: n.pitch }));
+
+                    const effectiveLyric = getEffectiveLyric(foundNote, state.notes);
+                    synth.playNote(foundNote.pitch, 0.2, effectiveLyric, null, foundNote.lyric, {
+                        volume: foundNote.volume ?? 1, vibrato: foundNote.vibrato ?? -1,
+                        reverb: foundNote.reverb ?? -1, pitchOffset: foundNote.pitchOffset ?? 0,
+                        pitchCents: foundNote.pitchCents ?? 0, pitchMethod: foundNote.pitchMethod || ''
+                    });
+                    requestDraw();
+                    return;
+                }
+
+                openNoteModal(foundNote);
+
+                if (coords.x >= nx + nw - 12 && coords.x <= nx + nw + 6) {
+                    isResizing = true;
+                    activeNote = foundNote;
+                } else {
+                    isDragging = true;
+                    activeNote = foundNote;
+                    dragOffsetX = coords.x - nx;
+                    dragOffsetY = coords.y - ((MAX_MIDI - foundNote.pitch) * KEY_HEIGHT);
+
+                    dragStartPositions = state.notes
+                        .filter(n => state.selectedNoteIds.has(n.id))
+                        .map(n => ({ id: n.id, startTick: n.startTick, pitch: n.pitch }));
+
+                    const effectiveLyric = getEffectiveLyric(foundNote, state.notes);
+                    synth.playNote(foundNote.pitch, 0.2, effectiveLyric, null, foundNote.lyric, {
+                        volume: foundNote.volume ?? 1, vibrato: foundNote.vibrato ?? -1,
+                        reverb: foundNote.reverb ?? -1, pitchOffset: foundNote.pitchOffset ?? 0,
+                        pitchCents: foundNote.pitchCents ?? 0, pitchMethod: foundNote.pitchMethod || ''
+                    });
+                }
+            } else {
+                if (!isShiftPressed) {
+                    state.selectedNoteIds.clear();
+                }
+
+                isBoxSelecting = true;
+                pointerDownStartCoords = { x: coords.x, y: coords.y };
+                selectionBox = { x1: coords.x, y1: coords.y, x2: coords.x, y2: coords.y };
+                closeNoteModal();
+                requestDraw();
+            }
+        }
+
+        function handlePointerMove(coords) {
+            if (isBoxSelecting && selectionBox) {
+                selectionBox.x2 = coords.x;
+                selectionBox.y2 = coords.y;
+
+                const bx1 = Math.min(selectionBox.x1, selectionBox.x2);
+                const bx2 = Math.max(selectionBox.x1, selectionBox.x2);
+                const by1 = Math.min(selectionBox.y1, selectionBox.y2);
+                const by2 = Math.max(selectionBox.y1, selectionBox.y2);
+
+                state.selectedNoteIds.clear();
+                ensureNotesSorted();
+                const boxTickStart = Math.floor(bx1 / GRID_STEP_PX) - 1;
+                const boxTickEnd = Math.ceil(bx2 / GRID_STEP_PX) + 1;
+                for (let i = 0; i < state.notes.length; i++) {
+                    const n = state.notes[i];
+                    if (n.startTick > boxTickEnd) break;
+                    if (n.startTick + n.durationTicks < boxTickStart) continue;
+                    const nx = n.startTick * GRID_STEP_PX;
+                    const ny = (MAX_MIDI - n.pitch) * KEY_HEIGHT;
+                    const nw = n.durationTicks * GRID_STEP_PX;
+                    const nh = KEY_HEIGHT;
+                    if (nx < bx2 && nx + nw > bx1 && ny < by2 && ny + nh > by1) {
+                        state.selectedNoteIds.add(n.id);
+                    }
+                }
+                requestDraw();
+            } else if (isResizing && activeNote) {
+                const currentTick = Math.max(1, Math.round(coords.x / GRID_STEP_PX));
+                activeNote.durationTicks = Math.max(1, currentTick - activeNote.startTick);
+                ensureTickInBounds(activeNote.startTick + activeNote.durationTicks);
+                markNotesDirty();
+                requestDraw();
+            } else if (isDragging && activeNote) {
+                const newStartTick = Math.max(0, Math.floor((coords.x - dragOffsetX) / GRID_STEP_PX));
+                const newPitch = Math.min(MAX_MIDI, Math.max(MIN_MIDI, MAX_MIDI - Math.floor((coords.y - dragOffsetY) / KEY_HEIGHT)));
+
+                const tickDelta = newStartTick - activeNote.startTick;
+                const pitchDelta = newPitch - activeNote.pitch;
+
+                if (tickDelta !== 0 || pitchDelta !== 0) {
+                    if (state.selectedNoteIds.size > 1 && dragStartPositions.length > 0) {
+                        const baseStart = dragStartPositions.find(p => p.id === activeNote.id)?.startTick ?? activeNote.startTick;
+                        const basePitch = dragStartPositions.find(p => p.id === activeNote.id)?.pitch ?? activeNote.pitch;
+                        dragStartPositions.forEach(pos => {
+                            const note = state.notes.find(n => n.id === pos.id);
+                            if (note) {
+                                note.startTick = Math.max(0, pos.startTick + (newStartTick - baseStart));
+                                note.pitch = Math.min(MAX_MIDI, Math.max(MIN_MIDI, pos.pitch + (newPitch - basePitch)));
+                                ensureTickInBounds(note.startTick + note.durationTicks);
+                            }
+                        });
+                    } else {
+                        activeNote.startTick = newStartTick;
+                        activeNote.pitch = newPitch;
+                        ensureTickInBounds(activeNote.startTick + activeNote.durationTicks);
+                    }
+                    markNotesDirty();
+
+                    if (pitchDelta !== 0) {
+                        const effectiveLyric = getEffectiveLyric(activeNote, state.notes);
+                        synth.playNote(newPitch, 0.15, effectiveLyric, null, activeNote.lyric, {
+                            volume: activeNote.volume ?? 1, vibrato: activeNote.vibrato ?? -1,
+                            reverb: activeNote.reverb ?? -1, pitchOffset: activeNote.pitchOffset ?? 0,
+                            pitchCents: activeNote.pitchCents ?? 0, pitchMethod: activeNote.pitchMethod || ''
+                        });
+                    }
+                }
+                requestDraw();
+            }
+        }
+
+        function handlePointerUp() {
+            const wasDragging = isDragging || isResizing;
+            isDragging = false;
+            isResizing = false;
+            if (wasDragging) {
+                markNotesDirty();
+                pushHistory();
+                scheduleSamplePreprocess(80);
+            }
+            if (isBoxSelecting) {
+                const dist = pointerDownStartCoords ? Math.hypot(selectionBox.x2 - selectionBox.x1, selectionBox.y2 - selectionBox.y1) : 0;
+                
+                isBoxSelecting = false;
+                const wasStartCoords = pointerDownStartCoords;
+                pointerDownStartCoords = null;
+                selectionBox = null;
+
+                if (dist < 6 && wasStartCoords) {
+                    const tick = Math.floor(wasStartCoords.x / GRID_STEP_PX);
+                    const pitch = MAX_MIDI - Math.floor(wasStartCoords.y / KEY_HEIGHT);
+
+                    if (tick >= 0 && tick < state.totalTicks && pitch >= MIN_MIDI && pitch <= MAX_MIDI) {
+                        const newNote = {
+                            id: Date.now() + Math.floor(Math.random() * 100000),
+                            startTick: tick,
+                            pitch: pitch,
+                            durationTicks: 4,
+                            lyric: 'あ',
+                            volume: 1.0,
+                            vibrato: -1,
+                            reverb: -1,
+                            pitchOffset: 0,
+                            pitchCents: 0,
+                            pitchMethod: ''
+                        };
+                        state.notes.push(newNote);
+                        markNotesDirty();
+                        scheduleSamplePreprocess(80);
+                        pushHistory();
+                        state.selectedNoteIds.clear();
+                        state.selectedNoteIds.add(newNote.id);
+                        openNoteModal(newNote);
+
+                        const effectiveLyric = getEffectiveLyric(newNote, state.notes);
+                        synth.playNote(pitch, 0.2, effectiveLyric, null, newNote.lyric, {
+                            volume: 1, vibrato: -1, reverb: -1, pitchOffset: 0, pitchCents: 0, pitchMethod: ''
+                        });
+                    }
+                } else if (state.selectedNoteIds.size > 0) {
+                    const firstSelected = state.notes.find(n => state.selectedNoteIds.has(n.id));
+                    if (firstSelected) openNoteModal(firstSelected);
+                }
+            }
+            activeNote = null;
+            dragStartPositions = [];
+            requestDraw();
+        }
+
+        let noteModal, modalInput, modalDeleteBtn, modalMoveBtn, modalCloseBtn;
+
+        function getNoteName(midi) {
+            const names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            const octave = Math.floor(midi / 12) - 1;
+            return names[midi % 12] + octave;
+        }
+
+        function openNoteModal(note) {
+            state.selectedNoteForModal = note;
+            if (modalInput) modalInput.value = note.lyric;
+
+            // Per-note param UI
+            const vol = typeof note.volume === 'number' ? note.volume : 1.0;
+            const vib = typeof note.vibrato === 'number' ? note.vibrato : -1;
+            const rev = typeof note.reverb === 'number' ? note.reverb : -1;
+            const poff = typeof note.pitchOffset === 'number' ? note.pitchOffset : 0;
+            const pcents = typeof note.pitchCents === 'number' ? note.pitchCents : 0;
+            const pmethod = note.pitchMethod || '';
+
+            const elVol = document.getElementById('modal-param-volume');
+            const elVib = document.getElementById('modal-param-vibrato');
+            const elRev = document.getElementById('modal-param-reverb');
+            const elPitch = document.getElementById('modal-param-pitch');
+            const elCents = document.getElementById('modal-param-cents');
+            const elMethod = document.getElementById('modal-param-pitch-method');
+            const valVol = document.getElementById('modal-val-volume');
+            const valVib = document.getElementById('modal-val-vibrato');
+            const valRev = document.getElementById('modal-val-reverb');
+            const valPitch = document.getElementById('modal-val-pitch');
+            const valCents = document.getElementById('modal-val-cents');
+            const valMethod = document.getElementById('modal-val-pitch-method');
+
+            if (elVol) elVol.value = vol;
+            if (elVib) elVib.value = vib;
+            if (elRev) elRev.value = rev;
+            if (elPitch) elPitch.value = poff;
+            if (elCents) elCents.value = pcents;
+            if (elMethod) elMethod.value = pmethod;
+            if (valVol) valVol.innerText = `${Math.round(vol * 100)}%`;
+            if (valVib) valVib.innerText = vib < 0 ? '—' : `${Math.round(vib * 100)}%`;
+            if (valRev) valRev.innerText = rev < 0 ? '—' : `${Math.round(rev * 100)}%`;
+            if (valPitch) {
+                const total = poff + pcents / 100;
+                const sign = total > 0 ? '+' : '';
+                valPitch.innerText = `${sign}${poff.toFixed(2)}`;
+            }
+            if (valCents) valCents.innerText = `${pcents > 0 ? '+' : ''}${pcents}¢`;
+            if (valMethod) {
+                valMethod.innerText = !pmethod ? 'グローバル' : (pmethod === 'psola' ? 'PSOLA' : pmethod === 'world' ? 'WORLD' : 'Rate');
+            }
+
+            const noteInfoEl = document.getElementById('note-info-label');
+            const moveTextEl = document.getElementById('modal-move-text');
+            if (noteInfoEl) {
+                const count = state.selectedNoteIds.size;
+                noteInfoEl.innerText = count > 1 ? `選択中: ${count}個のノート` : `ノートプロパティ (${getNoteName(note.pitch)})`;
+            }
+            if (moveTextEl) {
+                moveTextEl.innerText = state.moveModeNoteId === note.id ? '移動解除' : '移動';
+            }
+            if (noteModal) {
+                noteModal.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    noteModal.classList.remove('translate-y-full');
+                });
+            }
+            requestDraw();
+        }
+
+        function closeNoteModal() {
+            if (noteModal) {
+                noteModal.classList.add('translate-y-full');
+                setTimeout(() => {
+                    noteModal.classList.add('hidden');
+                }, 200);
+            }
+            state.selectedNoteForModal = null;
+            state.moveModeNoteId = null;
+            requestDraw();
+        }
+
+        // Lightweight, offline phrase-aware expression. This is DSP/heuristics, not a neural AI model.
+        function makeNoteParams(note, allNotes, engine = synth) {
+            const params = {
+                volume: typeof note.volume === 'number' ? note.volume : 1.0,
+                vibrato: typeof note.vibrato === 'number' ? note.vibrato : -1,
+                reverb: typeof note.reverb === 'number' ? note.reverb : -1,
+                pitchOffset: typeof note.pitchOffset === 'number' ? note.pitchOffset : 0,
+                pitchCents: typeof note.pitchCents === 'number' ? note.pitchCents : 0,
+                pitchMethod: note.pitchMethod || ''
+            };
+            const doNaturalize = !!engine.params.naturalize && engine.params.naturalizeStrength > 0;
+            const strength = doNaturalize ? Math.max(0, Math.min(1, engine.params.naturalizeStrength)) : 0;
+            const sorted = allNotes.slice().sort((a, b) => a.startTick - b.startTick);
+            const idx = sorted.findIndex(n => n.id === note.id);
+            const prev = idx > 0 ? sorted[idx - 1] : null;
+            const next = idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1] : null;
+            const phraseStart = !prev || note.startTick - (prev.startTick + prev.durationTicks) > 0.5;
+            const phraseEnd = !next || next.startTick - (note.startTick + note.durationTicks) > 0.5;
+            const leap = prev ? Math.abs((note.pitch || 60) - (prev.pitch || 60)) : 0;
+            let expression = 1;
+            if (phraseStart) expression += 0.045;
+            if (leap >= 4) expression += 0.025;
+            if (phraseEnd) expression -= 0.075;
+            if (note.durationTicks >= 8) expression += 0.015;
+            if (doNaturalize) {
+                params.volume = Math.max(0, params.volume * (1 + (expression - 1) * strength));
+                params.naturalize = true;
+                params.naturalizeStrength = strength;
+            } else {
+                params.naturalize = false;
+                params.naturalizeStrength = 0;
+            }
+            params.animeStyle = !!engine.params.animeStyle;
+            if (engine.params.animeStyle && prev && Math.abs(note.startTick - (prev.startTick + prev.durationTicks)) <= 0.5) {
+                params.glideFromMidi = (prev.pitch || 60) + (prev.pitchOffset || 0) + ((prev.pitchCents || 0) / 100);
+            }
+            return params;
+        }
+
+        let playInterval = null;
+        let isPreparingSequence = false;
+        let playbackPrepareToken = 0;
+
+        // Finish expensive sample pitch processing before starting the playback clock.
+        // This prevents 200+ notes from being scheduled against a start time that
+        // has already elapsed while PSOLA is still calculating.
+        async function preprocessSampleNotesForPlayback(token) {
+            const isCustom = !!synth.voicebanks[synth.mode];
+            const isNeko = synth.mode === 'neko';
+            if (!isCustom && !isNeko) return;
+            ensureNotesSorted();
+            const buffers = isCustom ? synth.voicebanks[synth.mode].buffers : synth.sampleBuffers;
+            if (!buffers) return;
+            const notes = state.notes.filter(n => n.startTick >= state.currentTick);
+            for (let i = 0; i < notes.length; i++) {
+                if (token !== playbackPrepareToken) return;
+                const note = notes[i];
+                if (!note.lyric || note.lyric === 'っ') continue;
+                const lyric = getEffectiveLyric(note, state.notes);
+                const kanaInfo = KANA_MAP[lyric] || { c: '', v: 'あ' };
+                const sampleBuf = buffers[lyric] || buffers[kanaInfo.v] || buffers[note.lyric] || Object.values(buffers)[0];
+                const method = resolvePitchMethod(note);
+                if (!sampleBuf || method === 'rate' || method === 'formant-pitch') continue;
+                const effectiveMidi = (Number(note.pitch) || 60) + (Number(note.pitchOffset) || 0) + (Number(note.pitchCents) || 0) / 100;
+                try { getPitchedSampleBuffer(synth, synth.mode, lyric, effectiveMidi, sampleBuf, method); } catch (e) {}
+                if ((i & 3) === 3) await new Promise(resolve => setTimeout(resolve, 0));
+            }
+        }
+
+        async function playSequence() {
+            if (state.isPlaying || isPreparingSequence) return;
+            synth.init();
+            isPreparingSequence = true;
+            const prepareToken = ++playbackPrepareToken;
+            const requestedStartTick = state.currentTick;
+            try {
+                await preprocessSampleNotesForPlayback(prepareToken);
+                if (prepareToken !== playbackPrepareToken) return;
+                if (synth.ctx.state === 'suspended') await synth.ctx.resume();
+            } catch (e) {
+                console.warn('Sample pre-processing failed; playback will continue with available buffers.', e);
+            } finally {
+                if (prepareToken === playbackPrepareToken) isPreparingSequence = false;
+            }
+            if (prepareToken !== playbackPrepareToken) return;
+            state.currentTick = requestedStartTick;
+
+            state.isPlaying = true;
+            document.body.classList.add('is-playing');
+            const playBtn = document.getElementById('btn-play');
+            if (playBtn) {
+                playBtn.style.background = 'linear-gradient(135deg, #f59e0b, #f97316)';
+                playBtn.style.boxShadow = '0 4px 16px -4px rgba(245, 158, 11, 0.45)';
+                playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+            }
+
+            state.playbackStartTick = state.currentTick;
+            // Small lead-in ensures scheduled nodes start in the future.
+            state.playbackStartTime = synth.ctx.currentTime + 0.08;
+
+            const secondsPerTick = (60 / state.bpm) / 4;
+
+            if (state.audioTrackBuffer) {
+                if (state.audioTrackSource) {
+                    try { state.audioTrackSource.stop(); } catch(e){}
+                }
+                state.audioTrackSource = synth.ctx.createBufferSource();
+                state.audioTrackSource.buffer = state.audioTrackBuffer;
+
+                if (!state.audioTrackGain) {
+                    state.audioTrackGain = synth.ctx.createGain();
+                    const volVal = parseFloat(document.getElementById('param-audio-vol')?.value || 0.7);
+                    state.audioTrackGain.gain.value = volVal;
+                    state.audioTrackGain.connect(synth.ctx.destination);
+                }
+
+                state.audioTrackSource.connect(state.audioTrackGain);
+                const startOffsetSec = state.playbackStartTick * secondsPerTick;
+                if (startOffsetSec < state.audioTrackBuffer.duration) {
+                    state.audioTrackSource.start(state.playbackStartTime, startOffsetSec);
+                }
+            }
+
+            ensureNotesSorted();
+            for (let i = 0; i < state.notes.length; i++) {
+                const note = state.notes[i];
+                if (note.startTick < state.currentTick) continue;
+                const delayTicks = note.startTick - state.currentTick;
+                const noteStartTime = state.playbackStartTime + (delayTicks * secondsPerTick);
+                const noteDuration = note.durationTicks * secondsPerTick;
+                const effectiveLyric = getEffectiveLyric(note, state.notes);
+                const noteParams = makeNoteParams(note, state.notes, synth);
+                synth.playNote(note.pitch, noteDuration, effectiveLyric, noteStartTime, note.lyric, noteParams);
+            }
+
+            function tickLoop() {
+                if (!state.isPlaying) return;
+                const elapsedSec = synth.ctx.currentTime - state.playbackStartTime;
+                const elapsedTicks = elapsedSec / secondsPerTick;
+                state.currentTick = state.playbackStartTick + elapsedTicks;
+
+                if (state.currentTick >= state.totalTicks) {
+                    stopSequence(true);
+                    return;
+                }
+
+                // Direct draw during playback for smooth playhead (culling keeps it cheap)
+                drawGrid();
+                drawRuler();
+                playInterval = requestAnimationFrame(tickLoop);
+            }
+            playInterval = requestAnimationFrame(tickLoop);
+        }
+
+        function stopSequence(resetPosition = true) {
+            playbackPrepareToken++;
+            isPreparingSequence = false;
+            state.isPlaying = false;
+            if (playInterval) cancelAnimationFrame(playInterval);
+
+            synth.stopAll();
+
+            if (state.audioTrackSource) {
+                try { state.audioTrackSource.stop(); } catch(e){}
+                state.audioTrackSource = null;
+            }
+
+            if (resetPosition) {
+                state.currentTick = 0;
+            }
+
+            document.body.classList.remove('is-playing');
+            const playBtn = document.getElementById('btn-play');
+            if (playBtn) {
+                playBtn.style.background = '';
+                playBtn.style.boxShadow = '';
+                playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+            }
+
+            requestDraw();
+        }
+
+        // Fixed WAV Audio Encoder function
+        function audioBufferToWav(buffer) {
+            const numChannels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const format = 1;
+            const bitDepth = 16;
+
+            let result;
+            if (numChannels === 2) {
+                const l = buffer.getChannelData(0);
+                const r = buffer.getChannelData(1);
+                result = new Float32Array(l.length + r.length);
+                for (let i = 0; i < l.length; i++) {
+                    result[i * 2] = l[i];
+                    result[i * 2 + 1] = r[i];
+                }
+            } else {
+                result = buffer.getChannelData(0);
+            }
+
+            const dataLength = result.length * (bitDepth / 8);
+            const bufferArray = new ArrayBuffer(44 + dataLength);
+            const view = new DataView(bufferArray);
+
+            const writeString = (offset, str) => {
+                for (let i = 0; i < str.length; i++) {
+                    view.setUint8(offset + i, str.charCodeAt(i));
+                }
+            };
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + dataLength, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * numChannels * (bitDepth / 8), true);
+            view.setUint16(32, numChannels * (bitDepth / 8), true);
+            view.setUint16(34, bitDepth, true);
+            writeString(36, 'data');
+            view.setUint32(40, dataLength, true);
+
+            let offset = 44;
+            for (let i = 0; i < result.length; i++) {
+                const s = Math.max(-1, Math.min(1, result[i]));
+                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+                offset += 2;
+            }
+
+            return new Blob([bufferArray], { type: 'audio/wav' });
+        }
+
+        window.onload = () => {
+            gridCanvas = document.getElementById('grid-canvas');
+            gridCtx = gridCanvas.getContext('2d');
+            rulerCanvas = document.getElementById('ruler-canvas');
+            rulerCtx = rulerCanvas.getContext('2d');
+            pianoKeysContainer = document.getElementById('piano-keys');
+
+            noteModal = document.getElementById('note-modal');
+            modalInput = document.getElementById('modal-lyric-input');
+            modalDeleteBtn = document.getElementById('modal-delete-btn');
+            modalMoveBtn = document.getElementById('modal-move-btn');
+            modalCloseBtn = document.getElementById('modal-close');
+
+            const btnAddMeasures = document.getElementById('btn-add-measures');
+            if (btnAddMeasures) {
+                btnAddMeasures.addEventListener('click', () => {
+                    addMeasures(8);
+                });
+            }
+
+            // Audio Track Load Handling
+            const inputAudioTrack = document.getElementById('input-audio-track');
+            const btnLoadAudio = document.getElementById('btn-load-audio');
+            const audioTrackControls = document.getElementById('audio-track-controls');
+            const audioTrackStatus = document.getElementById('audio-track-status');
+            const audioTrackName = document.getElementById('audio-track-name');
+            const detectedBpmVal = document.getElementById('detected-bpm-val');
+            const btnApplyBpm = document.getElementById('btn-apply-bpm');
+            const paramAudioVol = document.getElementById('param-audio-vol');
+            const valAudioVol = document.getElementById('val-audio-vol');
+
+            if (btnLoadAudio && inputAudioTrack) {
+                btnLoadAudio.addEventListener('click', () => inputAudioTrack.click());
+
+                inputAudioTrack.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    synth.init();
+                    audioTrackStatus.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-cyan-500"></i> 解析中...';
+                    audioTrackName.innerText = file.name;
+                    audioTrackControls.classList.remove('hidden');
+                    btnApplyBpm.classList.add('hidden');
+                    detectedBpmVal.innerText = '解析中...';
+
+                    try {
+                        const arrayBuffer = await file.arrayBuffer();
+                        const decodedBuffer = await synth.ctx.decodeAudioData(arrayBuffer);
+                        
+                        state.audioTrackBuffer = decodedBuffer;
+                        state.audioTrackName = file.name;
+                        audioTrackStatus.innerHTML = '<i class="fa-solid fa-check text-emerald-500"></i> ロード完了';
+
+                        const bpm = await analyzeAudioBpm(decodedBuffer);
+                        state.detectedBpm = bpm;
+                        detectedBpmVal.innerText = `${bpm} BPM`;
+                        btnApplyBpm.classList.remove('hidden');
+                    } catch (err) {
+                        audioTrackStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-500"></i> エラー';
+                    }
+                });
+            }
+
+            if (btnApplyBpm) {
+                btnApplyBpm.addEventListener('click', () => {
+                    if (state.detectedBpm) {
+                        updateBpm(state.detectedBpm);
+                        btnApplyBpm.innerText = '適用済み';
+                        setTimeout(() => { btnApplyBpm.innerText = 'BPM適用'; }, 1500);
+                    }
+                });
+            }
+
+            if (paramAudioVol) {
+                paramAudioVol.addEventListener('input', (e) => {
+                    const v = parseFloat(e.target.value);
+                    if (state.audioTrackGain) {
+                        state.audioTrackGain.gain.value = v;
+                    }
+                    if (valAudioVol) valAudioVol.innerText = `${Math.round(v * 100)}%`;
+                });
+            }
+
+            // Sidebar toggles
+            const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+            if (btnToggleSidebar && sidebar && sidebarOverlay) {
+                const toggleSidebar = () => {
+                    sidebar.classList.toggle('-translate-x-full');
+                    sidebarOverlay.classList.toggle('hidden');
+                };
+                btnToggleSidebar.addEventListener('click', toggleSidebar);
+                sidebarOverlay.addEventListener('click', toggleSidebar);
+            }
+
+            // Timeline Seeking
+            rulerCanvas.addEventListener('click', (e) => {
+                const rect = rulerCanvas.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickedTick = Math.max(0, Math.min(state.totalTicks, Math.floor(clickX / GRID_STEP_PX)));
+
+                state.currentTick = clickedTick;
+
+                if (state.isPlaying) {
+                    stopSequence(false);
+                    playSequence();
+                } else {
+                    requestDraw();
+                }
+            });
+
+            // Grid Canvas Mouse Events
+            gridCanvas.addEventListener('contextmenu', e => e.preventDefault());
+
+            gridCanvas.addEventListener('mousedown', (e) => {
+                const coords = getCanvasCoords(e, gridCanvas);
+                handlePointerDown(coords, e.button === 2, e.shiftKey);
+            });
+
+            gridCanvas.addEventListener('mousemove', (e) => {
+                const coords = getCanvasCoords(e, gridCanvas);
+                handlePointerMove(coords);
+            });
+
+            window.addEventListener('mouseup', handlePointerUp);
+
+            // Copy / Paste / Select All Toolbar Listeners
+            document.getElementById('btn-copy').addEventListener('click', copySelectedNotes);
+            document.getElementById('btn-paste').addEventListener('click', pasteNotes);
+            document.getElementById('btn-select-all').addEventListener('click', selectAllNotes);
+
+            // Undo / Redo
+            document.getElementById('btn-undo').addEventListener('click', undo);
+            document.getElementById('btn-redo').addEventListener('click', redo);
+
+            // Lyric Extract
+            document.getElementById('btn-extract-lyrics').addEventListener('click', showLyricModal);
+            document.getElementById('lyric-modal-close').addEventListener('click', hideLyricModal);
+            document.getElementById('lyric-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'lyric-modal') hideLyricModal();
+            });
+            document.getElementById('btn-copy-lyrics').addEventListener('click', () => {
+                const t = document.getElementById('lyric-text-continuous')?.value || '';
+                navigator.clipboard.writeText(t).then(() => {
+                    const btn = document.getElementById('btn-copy-lyrics');
+                    if (btn) {
+                        const orig = btn.innerHTML;
+                        btn.innerHTML = '<i class="fa-solid fa-check"></i> コピー済み';
+                        setTimeout(() => { btn.innerHTML = orig; }, 1200);
+                    }
+                }).catch(() => {});
+            });
+            document.getElementById('btn-download-lyrics').addEventListener('click', () => {
+                const { continuous, lines } = extractLyrics();
+                const content = continuous + '\n\n---\n\n' + lines.join('\n');
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `lyrics_${Date.now()}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            // Per-note param listeners
+            const applyNoteParam = (key, value, labelFn) => {
+                if (!state.selectedNoteForModal) return;
+                const ids = state.selectedNoteIds.size > 0
+                    ? state.selectedNoteIds
+                    : new Set([state.selectedNoteForModal.id]);
+                state.notes.forEach(n => {
+                    if (ids.has(n.id)) n[key] = value;
+                });
+                state.selectedNoteForModal[key] = value;
+                if (labelFn) labelFn(value);
+                // Debounced history: push on change end via input event is fine for ranges
+            };
+
+            let noteParamHistoryTimer = null;
+            const scheduleNoteParamHistory = () => {
+                if (noteParamHistoryTimer) clearTimeout(noteParamHistoryTimer);
+                noteParamHistoryTimer = setTimeout(() => pushHistory(), 400);
+            };
+
+            const modalParamVol = document.getElementById('modal-param-volume');
+            const modalParamVib = document.getElementById('modal-param-vibrato');
+            const modalParamRev = document.getElementById('modal-param-reverb');
+            const modalParamPitch = document.getElementById('modal-param-pitch');
+
+            if (modalParamVol) {
+                modalParamVol.addEventListener('input', (e) => {
+                    const v = parseFloat(e.target.value);
+                    applyNoteParam('volume', v, (val) => {
+                        const el = document.getElementById('modal-val-volume');
+                        if (el) el.innerText = `${Math.round(val * 100)}%`;
+                    });
+                    scheduleNoteParamHistory();
+                });
+            }
+            if (modalParamVib) {
+                modalParamVib.addEventListener('input', (e) => {
+                    const v = parseFloat(e.target.value);
+                    applyNoteParam('vibrato', v, (val) => {
+                        const el = document.getElementById('modal-val-vibrato');
+                        if (el) el.innerText = val < 0 ? '—' : `${Math.round(val * 100)}%`;
+                    });
+                    scheduleNoteParamHistory();
+                });
+            }
+            if (modalParamRev) {
+                modalParamRev.addEventListener('input', (e) => {
+                    const v = parseFloat(e.target.value);
+                    applyNoteParam('reverb', v, (val) => {
+                        const el = document.getElementById('modal-val-reverb');
+                        if (el) el.innerText = val < 0 ? '—' : `${Math.round(val * 100)}%`;
+                    });
+                    scheduleNoteParamHistory();
+                });
+            }
+            if (modalParamPitch) {
+                modalParamPitch.addEventListener('input', (e) => {
+                    const v = parseFloat(e.target.value);
+                    applyNoteParam('pitchOffset', v, (val) => {
+                        const el = document.getElementById('modal-val-pitch');
+                        if (el) {
+                            const sign = val > 0 ? '+' : '';
+                            el.innerText = `${sign}${val.toFixed(2)}`;
+                        }
+                    });
+                    scheduleNoteParamHistory();
+                    scheduleSamplePreprocess(220);
+                });
+            }
+
+            const modalParamCents = document.getElementById('modal-param-cents');
+            if (modalParamCents) {
+                modalParamCents.addEventListener('input', (e) => {
+                    const v = parseInt(e.target.value, 10);
+                    applyNoteParam('pitchCents', v, (val) => {
+                        const el = document.getElementById('modal-val-cents');
+                        if (el) el.innerText = `${val > 0 ? '+' : ''}${val}¢`;
+                    });
+                    scheduleNoteParamHistory();
+                    scheduleSamplePreprocess(220);
+                });
+            }
+
+            const modalParamPitchMethod = document.getElementById('modal-param-pitch-method');
+            if (modalParamPitchMethod) {
+                modalParamPitchMethod.addEventListener('change', (e) => {
+                    const v = e.target.value; // '' | psola | world | rate | formant-pitch
+                    applyNoteParam('pitchMethod', v, (val) => {
+                        const el = document.getElementById('modal-val-pitch-method');
+                        if (el) {
+                            el.innerText = !val ? 'グローバル' : (val === 'psola' ? 'PSOLA' : val === 'world' ? 'WORLD' : val === 'formant-pitch' ? 'フォルマント＋ピッチ' : 'Rate');
+                        }
+                    });
+                    pushHistory();
+                    scheduleSamplePreprocess(40);
+                });
+            }
+
+            // Lyric input also push history
+            if (modalInput) {
+                let lyricHistTimer = null;
+                modalInput.addEventListener('change', () => {
+                    pushHistory();
+                });
+            }
+
+            // Keyboard Shortcuts
+            window.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+                    e.preventDefault();
+                    undo();
+                } else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+                    e.preventDefault();
+                    redo();
+                } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+                    e.preventDefault();
+                    copySelectedNotes();
+                } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+                    e.preventDefault();
+                    pasteNotes();
+                } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+                    e.preventDefault();
+                    selectAllNotes();
+                } else if (e.key === 'Delete' || e.key === 'Backspace') {
+                    e.preventDefault();
+                    deleteSelectedNotes();
+                }
+            });
+
+            // Grid Canvas Touch Events
+            gridCanvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    touchStartTime = Date.now();
+                    const coords = getCanvasCoords(e, gridCanvas);
+                    handlePointerDown(coords);
+                }
+            }, { passive: false });
+
+            gridCanvas.addEventListener('touchmove', (e) => {
+                if (isDragging || isResizing || isBoxSelecting) {
+                    if (e.cancelable) e.preventDefault();
+                }
+                if (e.touches && e.touches.length > 0) {
+                    const coords = getCanvasCoords(e, gridCanvas);
+                    handlePointerMove(coords);
+                }
+            }, { passive: false });
+
+            window.addEventListener('touchend', handlePointerUp);
+            window.addEventListener('touchcancel', handlePointerUp);
+
+            // Bottom Property Sheet Listeners
+            if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeNoteModal);
+
+            if (modalMoveBtn) {
+                modalMoveBtn.addEventListener('click', () => {
+                    if (state.selectedNoteForModal) {
+                        if (state.moveModeNoteId === state.selectedNoteForModal.id) {
+                            state.moveModeNoteId = null;
+                        } else {
+                            state.moveModeNoteId = state.selectedNoteForModal.id;
+                        }
+                        openNoteModal(state.selectedNoteForModal);
+                    }
+                });
+            }
+
+            if (modalInput) {
+                modalInput.addEventListener('input', (e) => {
+                    if (state.selectedNoteForModal) {
+                        state.selectedNoteForModal.lyric = e.target.value || 'あ';
+                        scheduleSamplePreprocess(350);
+                        requestDraw();
+                    }
+                });
+                modalInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') closeNoteModal();
+                });
+            }
+
+            if (modalDeleteBtn) {
+                modalDeleteBtn.addEventListener('click', () => {
+                    if (state.selectedNoteForModal) {
+                        state.notes = state.notes.filter(n => n.id !== state.selectedNoteForModal.id);
+                        markNotesDirty();
+                        pushHistory();
+                        requestDraw();
+                    }
+                    closeNoteModal();
+                });
+            }
+
+            // Dark / Light toggle
+            const themeToggle = document.getElementById('btn-theme-toggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', toggleDarkMode);
+            }
+
+            // Playback controls
+            document.getElementById('btn-play').addEventListener('click', () => {
+                if (state.isPlaying) {
+                    stopSequence(false);
+                } else {
+                    playSequence();
+                }
+            });
+
+            document.getElementById('btn-stop').addEventListener('click', () => stopSequence(true));
+
+            document.getElementById('singer-mode').addEventListener('change', async (e) => {
+                const newMode = e.target.value;
+                const vb = synth.voicebanks[newMode];
+                const name = vb ? vb.name : newMode;
+                showStudioLoading(`${name} に切り替え中…`);
+                // Allow UI to paint the overlay before heavy work
+                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+                synth.mode = newMode;
+                if (vb) {
+                    if (vb.themeColor) applyThemeColor(vb.themeColor);
+                    if (vb.defaultPitchMethod) {
+                        samplePitchMethod = vb.defaultPitchMethod;
+                        const sel = document.getElementById('sample-pitch-method');
+                        if (sel) sel.value = samplePitchMethod;
+                    }
+                }
+                samplePitchCache.clear();
+                scheduleSamplePreprocess(40);
+                // Short delay so the preparing screen is visible when switching
+                await new Promise(r => setTimeout(r, 450));
+                hideStudioLoading();
+            });
+
+            // Sample pitch algorithm selector (Neko + custom JSON banks)
+            const samplePitchSelect = document.getElementById('sample-pitch-method');
+            if (samplePitchSelect) {
+                samplePitchMethod = samplePitchSelect.value || 'rate';
+                samplePitchSelect.addEventListener('change', (e) => {
+                    samplePitchMethod = e.target.value;
+                    samplePitchCache.clear();
+                    scheduleSamplePreprocess(40);
+                });
+            }
+
+            // Volume Slider
+            document.getElementById('param-volume').addEventListener('input', (e) => {
+                const v = parseFloat(e.target.value);
+                synth.params.volume = v;
+                if (synth.masterGain) synth.masterGain.gain.value = v;
+                document.getElementById('val-volume').innerText = `${Math.round(v * 100)}%`;
+            });
+
+            // FIXED: Vibrato Slider Event Listener
+            document.getElementById('param-vibrato').addEventListener('input', (e) => {
+                const v = parseFloat(e.target.value);
+                synth.params.vibrato = v;
+                document.getElementById('val-vibrato').innerText = `${Math.round(v * 100)}%`;
+            });
+
+            const naturalizeToggle = document.getElementById('param-naturalize');
+            const naturalizeStrength = document.getElementById('param-naturalize-strength');
+            if (naturalizeToggle) naturalizeToggle.addEventListener('change', (e) => {
+                synth.params.naturalize = e.target.checked;
+            });
+            if (naturalizeStrength) naturalizeStrength.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                synth.params.naturalizeStrength = value;
+                document.getElementById('val-naturalize-strength').innerText = `${Math.round(value * 100)}%`;
+            });
+
+            const animeStyleToggle = document.getElementById('param-anime-style');
+            const animeStrength = document.getElementById('param-anime-strength');
+            if (animeStyleToggle) animeStyleToggle.addEventListener('change', (e) => {
+                synth.params.animeStyle = e.target.checked;
+            });
+            if (animeStrength) animeStrength.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                synth.params.animeStyleStrength = value;
+                document.getElementById('val-anime-strength').innerText = `${Math.round(value * 100)}%`;
+            });
+
+            // FIXED: Reverb Slider Event Listener
+            document.getElementById('param-reverb').addEventListener('input', (e) => {
+                const v = parseFloat(e.target.value);
+                synth.params.reverb = v;
+                if (synth.dryGain && synth.reverbGain) {
+                    synth.dryGain.gain.value = 1.0 - v * 0.5;
+                    synth.reverbGain.gain.value = v;
+                }
+                document.getElementById('val-reverb').innerText = `${Math.round(v * 100)}%`;
+            });
+
+            // BPM Slider & Header Input
+            const paramBpm = document.getElementById('param-bpm');
+            const valBpm = document.getElementById('val-bpm');
+            const headerBpmInput = document.getElementById('header-bpm-input');
+
+            const updateBpm = (newBpm) => {
+                const bpmVal = Math.min(240, Math.max(40, parseInt(newBpm) || 120));
+                state.bpm = bpmVal;
+                synth.params.bpm = bpmVal;
+                if (paramBpm) paramBpm.value = bpmVal;
+                if (valBpm) valBpm.innerText = `${bpmVal}`;
+                if (headerBpmInput) headerBpmInput.value = bpmVal;
+            };
+
+            if (headerBpmInput) {
+                headerBpmInput.addEventListener('change', (e) => updateBpm(e.target.value));
+                headerBpmInput.addEventListener('input', (e) => updateBpm(e.target.value));
+            }
+
+            if (paramBpm) {
+                paramBpm.addEventListener('input', (e) => updateBpm(e.target.value));
+            }
+
+            // Save Project JSON
+            document.getElementById('btn-save-project').addEventListener('click', () => {
+                const projectData = {
+                    version: '1.0',
+                    bpm: state.bpm,
+                    singerMode: synth.mode,
+                    volume: synth.params.volume,
+                    vibrato: synth.params.vibrato,
+                    reverb: synth.params.reverb,
+                    naturalize: synth.params.naturalize,
+                    naturalizeStrength: synth.params.naturalizeStrength,
+                    animeStyle: synth.params.animeStyle,
+                    animeStyleStrength: synth.params.animeStyleStrength,
+                    notes: state.notes
+                };
+
+                const jsonStr = JSON.stringify(projectData, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `vocaloid_project_${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            // Open Project JSON
+            const openInput = document.getElementById('input-open-project');
+            document.getElementById('btn-open-project').addEventListener('click', () => {
+                openInput.click();
+            });
+
+            openInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    try {
+                        const data = JSON.parse(evt.target.result);
+                        if (!data || !Array.isArray(data.notes)) {
+                            return;
+                        }
+
+                        state.notes = data.notes.map(normalizeNote);
+                        markNotesDirty();
+                        state.history = [cloneNotes(state.notes)];
+                        state.historyIndex = 0;
+                        updateUndoRedoButtons();
+
+                        let maxTick = 64;
+                        state.notes.forEach(n => {
+                            if (n.startTick + n.durationTicks > maxTick) {
+                                maxTick = n.startTick + n.durationTicks;
+                            }
+                        });
+                        state.totalTicks = Math.max(64, Math.ceil(maxTick / 32) * 32);
+                        updateBarCountBadge();
+
+                        if (typeof data.bpm === 'number') {
+                            state.bpm = data.bpm;
+                            synth.params.bpm = data.bpm;
+                            document.getElementById('param-bpm').value = data.bpm;
+                            document.getElementById('val-bpm').innerText = `${data.bpm}`;
+                        }
+
+                        if (data.singerMode && data.singerMode !== 'formant' && synth.voicebanks[data.singerMode]) {
+                            synth.mode = data.singerMode;
+                            document.getElementById('singer-mode').value = data.singerMode;
+                        } else if (data.singerMode === 'formant') {
+                            // Cyber Singer removed — keep current sample bank
+                        }
+
+                        if (typeof data.volume === 'number') {
+                            synth.params.volume = data.volume;
+                            if (synth.masterGain) synth.masterGain.gain.value = data.volume;
+                            document.getElementById('param-volume').value = data.volume;
+                            document.getElementById('val-volume').innerText = `${Math.round(data.volume * 100)}%`;
+                        }
+
+                        if (typeof data.vibrato === 'number') {
+                            synth.params.vibrato = data.vibrato;
+                            document.getElementById('param-vibrato').value = data.vibrato;
+                            document.getElementById('val-vibrato').innerText = `${Math.round(data.vibrato * 100)}%`;
+                        }
+
+                        if (typeof data.reverb === 'number') {
+                            synth.params.reverb = data.reverb;
+                            if (synth.dryGain && synth.reverbGain) {
+                                synth.dryGain.gain.value = 1.0 - data.reverb * 0.5;
+                                synth.reverbGain.gain.value = data.reverb;
+                            }
+                            document.getElementById('param-reverb').value = data.reverb;
+                            document.getElementById('val-reverb').innerText = `${Math.round(data.reverb * 100)}%`;
+                        }
+
+                        if (typeof data.naturalize === 'boolean') {
+                            synth.params.naturalize = data.naturalize;
+                            document.getElementById('param-naturalize').checked = data.naturalize;
+                        }
+                        if (typeof data.naturalizeStrength === 'number') {
+                            synth.params.naturalizeStrength = data.naturalizeStrength;
+                            document.getElementById('param-naturalize-strength').value = data.naturalizeStrength;
+                            document.getElementById('val-naturalize-strength').innerText = `${Math.round(data.naturalizeStrength * 100)}%`;
+                        }
+                        if (typeof data.animeStyle === 'boolean') {
+                            synth.params.animeStyle = data.animeStyle;
+                            document.getElementById('param-anime-style').checked = data.animeStyle;
+                        }
+                        if (typeof data.animeStyleStrength === 'number') {
+                            synth.params.animeStyleStrength = data.animeStyleStrength;
+                            document.getElementById('param-anime-strength').value = data.animeStyleStrength;
+                            document.getElementById('val-anime-strength').innerText = `${Math.round(data.animeStyleStrength * 100)}%`;
+                        }
+
+                        closeNoteModal();
+                        resizeCanvases();
+                        e.target.value = '';
+                    } catch (err) {}
+                };
+                reader.readAsText(file);
+            });
+
+            document.getElementById('btn-export-wav').addEventListener('click', async () => {
+                if (state.notes.length === 0 && !state.audioTrackBuffer) {
+                    return;
+                }
+
+                const exportBtn = document.getElementById('btn-export-wav');
+                const originalText = exportBtn.innerHTML;
+                exportBtn.disabled = true;
+                exportBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 書き出し中...';
+
+                try {
+                    const secondsPerTick = (60 / state.bpm) / 4;
+
+                    let maxTick = 0;
+                    state.notes.forEach(n => {
+                        if (n.startTick + n.durationTicks > maxTick) {
+                            maxTick = n.startTick + n.durationTicks;
+                        }
+                    });
+
+                    let totalDuration = maxTick * secondsPerTick + 2.0;
+                    if (state.audioTrackBuffer) {
+                        totalDuration = Math.max(totalDuration, state.audioTrackBuffer.duration + 1.0);
+                    }
+                    totalDuration = Math.max(totalDuration, 2.0);
+
+                    const sampleRate = 44100;
+                    const offlineCtx = new OfflineAudioContext(2, Math.ceil(sampleRate * totalDuration), sampleRate);
+                    
+                    const offlineSynth = new VocaloidSynthEngine();
+                    offlineSynth.ctx = offlineCtx;
+                    offlineSynth.isInit = true;
+                    offlineSynth.mode = synth.mode;
+                    offlineSynth.sampleBuffers = synth.sampleBuffers;
+                    offlineSynth.voicebanks = synth.voicebanks;
+                    offlineSynth.params = { ...synth.params };
+
+                    offlineSynth.masterGain = offlineCtx.createGain();
+                    offlineSynth.masterGain.gain.value = offlineSynth.params.volume;
+
+                    offlineSynth.reverbNode = offlineCtx.createConvolver();
+                    offlineSynth.reverbNode.buffer = offlineSynth.createImpulseResponse(1.8, 2.0);
+
+                    offlineSynth.dryGain = offlineCtx.createGain();
+                    offlineSynth.reverbGain = offlineCtx.createGain();
+
+                    offlineSynth.dryGain.gain.value = 1.0 - offlineSynth.params.reverb * 0.5;
+                    offlineSynth.reverbGain.gain.value = offlineSynth.params.reverb;
+
+                    offlineSynth.masterGain.connect(offlineSynth.dryGain);
+                    offlineSynth.dryGain.connect(offlineCtx.destination);
+
+                    offlineSynth.masterGain.connect(offlineSynth.reverbNode);
+                    offlineSynth.reverbNode.connect(offlineSynth.reverbGain);
+                    offlineSynth.reverbGain.connect(offlineCtx.destination);
+
+                    if (state.audioTrackBuffer) {
+                        const trackSource = offlineCtx.createBufferSource();
+                        trackSource.buffer = state.audioTrackBuffer;
+                        const trackGain = offlineCtx.createGain();
+                        const volVal = parseFloat(document.getElementById('param-audio-vol')?.value || 0.7);
+                        trackGain.gain.value = volVal;
+                        trackSource.connect(trackGain);
+                        trackGain.connect(offlineCtx.destination);
+                        trackSource.start(0);
+                    }
+
+                    state.notes.forEach(note => {
+                        const noteStartTime = note.startTick * secondsPerTick;
+                        const noteDuration = note.durationTicks * secondsPerTick;
+                        const effectiveLyric = getEffectiveLyric(note, state.notes);
+                        const noteParams = makeNoteParams(note, state.notes, offlineSynth);
+                        offlineSynth.playNote(note.pitch, noteDuration, effectiveLyric, noteStartTime, note.lyric, noteParams);
+                    });
+
+                    const renderedBuffer = await offlineCtx.startRendering();
+                    const wavBlob = audioBufferToWav(renderedBuffer);
+
+                    // FIXED: Correct element creation and download trigger
+                    const url = URL.createObjectURL(wavBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `vocaloid_song_${Date.now()}.wav`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } catch (err) {
+                    console.error('WAV export error:', err);
+                } finally {
+                    exportBtn.disabled = false;
+                    exportBtn.innerHTML = originalText;
+                }
+            });
+
+            // Initialize Canvases and Keyboard
+            initPianoKeys();
+            resizeCanvases();
+
+            // Load custom voicebanks defined in VOICEBANKS (HTML編集で追加)
+            showStudioLoading('スタジオを準備中…');
+            synth.init();
+            synth.loadVoicebanksFromConfig().then(() => {
+                scheduleSamplePreprocess(40);
+            }).catch((err) => {
+                console.error(err);
+                showStudioLoading('音源の読み込みに失敗しました');
+                setTimeout(hideStudioLoading, 2000);
+            });
+
+            // Seed undo history with initial state
+            state.history = [cloneNotes(state.notes)];
+            state.historyIndex = 0;
+            updateUndoRedoButtons();
+
+            window.addEventListener('resize', resizeCanvases);
+
+            // Redraw on scroll so viewport culling stays correct
+            const gridScrollWrapper = document.getElementById('grid-scroll-wrapper');
+            if (gridScrollWrapper) {
+                let scrollRaf = null;
+                gridScrollWrapper.addEventListener('scroll', () => {
+                    if (scrollRaf) return;
+                    scrollRaf = requestAnimationFrame(() => {
+                        scrollRaf = null;
+                        drawGrid();
+                        drawRuler();
+                    });
+                }, { passive: true });
+            }
+        };
+    </script>
+</body>
+</html>
