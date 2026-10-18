@@ -757,7 +757,7 @@
         const VOICEBANKS = [
             {
                 id: "neko",
-                name: "透久音ネコ",
+                name: "透久音ネコ（SVM)",
                 themeColor: "#fcb600",
                 pitchMethod: "pitch",
                 otoUrl: "https://proxy.a2giri.workers.dev/?url=https://gitlab.com/a2giri/vasizer/-/raw/main/neko.ini",
@@ -778,6 +778,22 @@
                 pitchMethod: "psola",
                 otoUrl: "https://proxy.a2giri.workers.dev/?url=https://gitlab.com/a2giri/vasizer/-/raw/main/teto.ini",
                 uUrl: "https://proxy.a2giri.workers.dev/?url=https://gitlab.com/a2giri/vasizer/-/raw/main/teto.0vb"
+            },
+            {
+                id: "poyo",
+                name: "ぽよろいど",
+                themeColor: "#ffa6cb",
+                pitchMethod: "psola",
+                otoUrl: "https://proxy.a2giri.workers.dev/?url=https://gitlab.com/a2giri/vasizer/-/raw/main/poyoroid.ini",
+                uUrl: "https://proxy.a2giri.workers.dev/?url=https://gitlab.com/a2giri/vasizer/-/raw/main/poyoroid.0vb"
+            },
+            {
+                id: "mail",
+                name: "電子メル（SVM）",
+                themeColor: "#adbbed",
+                pitchMethod: "pitch",
+                otoUrl: "https://proxy.a2giri.workers.dev/?url=https://gitlab.com/a2giri/vasizer/-/raw/main/mail.ini",
+                uUrl: "https://proxy.a2giri.workers.dev/?url=https://gitlab.com/a2giri/vasizer/-/raw/main/mail.0vb"
             }
             // 追加例（カンマを忘れずに）:
             // ,{
@@ -1425,41 +1441,147 @@
                 return { vbId, loadedCount, name: vbName, themeColor, defaultPitchMethod };
             }
 
-            /** Load all entries from VOICEBANKS (edit that array in the HTML). */
+            /**
+             * Populate singer select from VOICEBANKS without fetching audio.
+             * Actual sample data is loaded on demand via ensureVoicebankLoaded().
+             */
+            populateVoicebankSelect() {
+                const modeSelect = document.getElementById('singer-mode');
+                if (!modeSelect || !Array.isArray(VOICEBANKS)) return;
+                const current = modeSelect.value;
+                modeSelect.innerHTML = '';
+                for (const entry of VOICEBANKS) {
+                    if (!entry || !entry.name) continue;
+                    const vbId = entry.id
+                        ? String(entry.id).trim()
+                        : ('vb_' + String(entry.name).replace(/\s+/g, '_').toLowerCase());
+                    const opt = document.createElement('option');
+                    opt.value = vbId;
+                    const loaded = this.voicebanks[vbId];
+                    opt.innerText = loaded
+                        ? `${entry.name} (${Object.keys(loaded.buffers || {}).length}音素)`
+                        : `${entry.name}`;
+                    if (entry.themeColor) opt.dataset.theme = entry.themeColor;
+                    modeSelect.appendChild(opt);
+                }
+                if (current && Array.from(modeSelect.options).some(o => o.value === current)) {
+                    modeSelect.value = current;
+                } else if (modeSelect.options.length > 0) {
+                    modeSelect.selectedIndex = 0;
+                }
+            }
+
+            /** Find VOICEBANKS config entry by id. */
+            findVoicebankConfig(vbId) {
+                if (!Array.isArray(VOICEBANKS)) return null;
+                for (const entry of VOICEBANKS) {
+                    if (!entry || !entry.name) continue;
+                    const id = entry.id
+                        ? String(entry.id).trim()
+                        : ('vb_' + String(entry.name).replace(/\s+/g, '_').toLowerCase());
+                    if (id === vbId) return { ...entry, id };
+                }
+                return null;
+            }
+
+            /**
+             * Load a voicebank only if not already cached in this.voicebanks.
+             * Concurrent calls for the same id share one in-flight promise.
+             */
+            async ensureVoicebankLoaded(vbId) {
+                if (!vbId) return null;
+                if (this.voicebanks[vbId]) return this.voicebanks[vbId];
+
+                if (!this._vbLoadPromises) this._vbLoadPromises = {};
+                if (this._vbLoadPromises[vbId]) {
+                    return this._vbLoadPromises[vbId];
+                }
+
+                const entry = this.findVoicebankConfig(vbId);
+                if (!entry) {
+                    console.warn('No VOICEBANKS entry for', vbId);
+                    return null;
+                }
+
+                const statusEl = document.getElementById('voicebank-status');
+                const promise = (async () => {
+                    try {
+                        if (statusEl) {
+                            statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-cyan-500"></i> ${entry.name} をロード中...`;
+                        }
+                        const result = await this.registerCustomVoicebank(entry, { select: false });
+                        const modeSelect = document.getElementById('singer-mode');
+                        if (modeSelect) {
+                            const opt = Array.from(modeSelect.options).find(o => o.value === result.vbId);
+                            if (opt) opt.innerText = `${result.name} (${result.loadedCount}音素)`;
+                        }
+                        if (statusEl) {
+                            statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500"></i> ${result.name} (${result.loadedCount}音素)`;
+                        }
+                        console.log('Voicebank loaded on demand:', result.name, result.loadedCount);
+                        return this.voicebanks[result.vbId];
+                    } catch (err) {
+                        console.error('Failed to load voicebank', entry.name, err);
+                        if (statusEl) {
+                            statusEl.innerHTML = `<i class="fa-solid fa-circle-exclamation text-red-500"></i> ${entry.name} の読込失敗`;
+                        }
+                        throw err;
+                    } finally {
+                        delete this._vbLoadPromises[vbId];
+                    }
+                })();
+
+                this._vbLoadPromises[vbId] = promise;
+                return promise;
+            }
+
+            /**
+             * Startup: register select options, fetch only the default (first) bank.
+             * Other banks load when the user switches singer.
+             */
             async loadVoicebanksFromConfig() {
                 if (!Array.isArray(VOICEBANKS) || VOICEBANKS.length === 0) {
                     showStudioLoading('ボイスバンクが設定されていません');
                     return;
                 }
                 if (!this.isInit) this.init();
-                showStudioLoading('ボイスバンクを読み込んでいます…');
-                const statusEl = document.getElementById('voicebank-status');
-                let firstOk = true;
-                let loadedNames = [];
-                for (const entry of VOICEBANKS) {
-                    if (!entry || !entry.name) continue;
-                    try {
-                        if (statusEl) {
-                            statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-cyan-500"></i> ${entry.name} をロード中...`;
-                        }
-                        showStudioLoading(`${entry.name} を準備しています…`);
-                        const result = await this.registerCustomVoicebank(entry, { select: firstOk });
-                        firstOk = false;
-                        loadedNames.push(`${result.name}(${result.loadedCount})`);
-                        console.log('Voicebank loaded:', result.name, result.loadedCount);
-                    } catch (err) {
-                        console.error('Failed to load voicebank', entry.name, err);
-                        if (statusEl) {
-                            statusEl.innerHTML = `<i class="fa-solid fa-circle-exclamation text-red-500"></i> ${entry.name} の読込失敗`;
+                this.populateVoicebankSelect();
+
+                const modeSelect = document.getElementById('singer-mode');
+                const defaultId = modeSelect && modeSelect.options.length
+                    ? modeSelect.options[0].value
+                    : null;
+
+                if (!defaultId) {
+                    showStudioLoading('ボイスバンクが設定されていません');
+                    await new Promise(r => setTimeout(r, 800));
+                    hideStudioLoading();
+                    return;
+                }
+
+                const entry = this.findVoicebankConfig(defaultId);
+                const label = entry ? entry.name : defaultId;
+                showStudioLoading(`${label} を準備しています…`);
+                try {
+                    await this.ensureVoicebankLoaded(defaultId);
+                    this.mode = defaultId;
+                    if (modeSelect) modeSelect.value = defaultId;
+                    const vb = this.voicebanks[defaultId];
+                    if (vb) {
+                        if (vb.themeColor) applyThemeColor(vb.themeColor);
+                        if (vb.defaultPitchMethod) {
+                            samplePitchMethod = vb.defaultPitchMethod;
+                            const sel = document.getElementById('sample-pitch-method');
+                            if (sel) sel.value = samplePitchMethod;
                         }
                     }
+                    showStudioLoading('スタジオの準備が完了しました');
+                    await new Promise(r => setTimeout(r, 350));
+                } catch (err) {
+                    console.error(err);
+                    showStudioLoading('音源の読み込みに失敗しました');
+                    await new Promise(r => setTimeout(r, 1500));
                 }
-                if (statusEl && loadedNames.length > 0) {
-                    statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500"></i> ${loadedNames.join(' / ')}`;
-                }
-                // Brief pause so the user sees the ready state
-                showStudioLoading('スタジオの準備が完了しました');
-                await new Promise(r => setTimeout(r, 350));
                 hideStudioLoading();
             }
 
@@ -3401,25 +3523,37 @@
 
             document.getElementById('singer-mode').addEventListener('change', async (e) => {
                 const newMode = e.target.value;
-                const vb = synth.voicebanks[newMode];
-                const name = vb ? vb.name : newMode;
-                showStudioLoading(`${name} に切り替え中…`);
+                const cfg = synth.findVoicebankConfig(newMode);
+                const name = (synth.voicebanks[newMode] && synth.voicebanks[newMode].name)
+                    || (cfg && cfg.name)
+                    || newMode;
+                const alreadyLoaded = !!synth.voicebanks[newMode];
+                showStudioLoading(alreadyLoaded ? `${name} に切り替え中…` : `${name} を読み込み中…`);
                 // Allow UI to paint the overlay before heavy work
                 await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-                synth.mode = newMode;
-                if (vb) {
-                    if (vb.themeColor) applyThemeColor(vb.themeColor);
-                    if (vb.defaultPitchMethod) {
-                        samplePitchMethod = vb.defaultPitchMethod;
-                        const sel = document.getElementById('sample-pitch-method');
-                        if (sel) sel.value = samplePitchMethod;
+                try {
+                    await synth.ensureVoicebankLoaded(newMode);
+                    const vb = synth.voicebanks[newMode];
+                    synth.mode = newMode;
+                    if (vb) {
+                        if (vb.themeColor) applyThemeColor(vb.themeColor);
+                        if (vb.defaultPitchMethod) {
+                            samplePitchMethod = vb.defaultPitchMethod;
+                            const sel = document.getElementById('sample-pitch-method');
+                            if (sel) sel.value = samplePitchMethod;
+                        }
                     }
+                    samplePitchCache.clear();
+                    scheduleSamplePreprocess(40);
+                    await new Promise(r => setTimeout(r, alreadyLoaded ? 250 : 200));
+                } catch (err) {
+                    console.error('Singer switch failed', err);
+                    showStudioLoading(`${name} の読込に失敗しました`);
+                    await new Promise(r => setTimeout(r, 1200));
+                    const modeSelect = document.getElementById('singer-mode');
+                    if (modeSelect && synth.mode) modeSelect.value = synth.mode;
                 }
-                samplePitchCache.clear();
-                scheduleSamplePreprocess(40);
-                // Short delay so the preparing screen is visible when switching
-                await new Promise(r => setTimeout(r, 450));
                 hideStudioLoading();
             });
 
@@ -3571,9 +3705,33 @@
                             document.getElementById('val-bpm').innerText = `${data.bpm}`;
                         }
 
-                        if (data.singerMode && data.singerMode !== 'formant' && synth.voicebanks[data.singerMode]) {
-                            synth.mode = data.singerMode;
-                            document.getElementById('singer-mode').value = data.singerMode;
+                        if (data.singerMode && data.singerMode !== 'formant') {
+                            const modeSelect = document.getElementById('singer-mode');
+                            if (modeSelect && Array.from(modeSelect.options).some(o => o.value === data.singerMode)) {
+                                modeSelect.value = data.singerMode;
+                            }
+                            (async () => {
+                                try {
+                                    showStudioLoading('プロジェクトの音源を準備中…');
+                                    await synth.ensureVoicebankLoaded(data.singerMode);
+                                    synth.mode = data.singerMode;
+                                    const vb = synth.voicebanks[data.singerMode];
+                                    if (vb) {
+                                        if (vb.themeColor) applyThemeColor(vb.themeColor);
+                                        if (vb.defaultPitchMethod) {
+                                            samplePitchMethod = vb.defaultPitchMethod;
+                                            const sel = document.getElementById('sample-pitch-method');
+                                            if (sel) sel.value = samplePitchMethod;
+                                        }
+                                    }
+                                    samplePitchCache.clear();
+                                    scheduleSamplePreprocess(40);
+                                } catch (err) {
+                                    console.error('Project voicebank load failed', err);
+                                } finally {
+                                    hideStudioLoading();
+                                }
+                            })();
                         } else if (data.singerMode === 'formant') {
                             // Cyber Singer removed — keep current sample bank
                         }
